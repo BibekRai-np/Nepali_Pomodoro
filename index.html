@@ -1,19 +1,24 @@
 <!DOCTYPE html>
 <html lang="ne" dir="ltr">
 <head>
-  <!-- Developed by Bibek Rai -->
+  <!-- Developed by Bibek Rai — Enhanced Edition -->
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="description" content="टिक्-टिक् Pomodoro – द्विभाषिक पोमोडोरो टाइमर। Bilingual Pomodoro timer with Nepali date and NPT clock." />
-  <title>२५:०० | टिक्-टिक् Nepali Pomodoro</title>
+  <meta name="theme-color" content="#76C8A1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="टिक्-टिक्" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="application-name" content="टिक्-टिक् Pomodoro" />
 
-  <!--
-    Font Strategy (Organic Vitality theme):
-    • Nepali headings/UI  → Mukta (clean geometric Devanagari sans)
-    • English countdown   → Bodoni Moda (high-contrast Didone serif, weight 900) ← replaces Foldit
-    • Nepali countdown    → Vesper Libre (high-contrast Devanagari serif)
-    All loaded from Google Fonts.
-  -->
+  <!-- Nepal flag emoji favicon via SVG data URI -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇳🇵</text></svg>" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇳🇵</text></svg>" />
+
+  <!-- PWA Manifest (inline via JS blob — no separate file needed) -->
+
+  <!-- Fonts: Mukta (Devanagari UI), Outfit (Latin UI), Vesper Libre (Devanagari timer), Pinyon Script (Latin timer) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Mukta:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;900&family=Vesper+Libre:wght@400;700;900&display=swap" rel="stylesheet" />
@@ -50,28 +55,34 @@
       --r-xl:  32px;
       --r-full: 999px;
 
-      --font-ne:    'Mukta', 'Noto Sans Devanagari', sans-serif;
-      --font-en:    'Outfit', sans-serif;
+      --font-ne:       'Mukta', 'Noto Sans Devanagari', sans-serif;
+      --font-en:       'Outfit', sans-serif;
       --font-timer-ne: 'Vesper Libre', 'Noto Sans Devanagari', serif;
-      --font-timer-en: 'Pinyon Script', serif; /* ← Pinyon Script for English countdown (BoldPrice-style) */
+      --font-timer-en: 'Pinyon Script', serif;
 
-      --timer-size: clamp(3.8rem, 16vw, 11rem);
-      --btn-h: 48px;
+      /* Fluid timer sizing — slightly smaller on mobile to prevent overflow */
+      --timer-size: clamp(3rem, 14vw, 10rem);
+      --btn-h: 44px;
     }
 
-    html { font-size: 16px; }
+    html { font-size: 15px; }
+    @media (min-width: 480px) { html { font-size: 16px; } }
 
     body {
       background: var(--bg);
       color: var(--text-main);
       font-family: var(--font-en);
+      /* Use dvh so footer doesn't overflow on mobile browsers */
       min-height: 100dvh;
+      max-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
       overflow-x: hidden;
+      overflow-y: auto;
     }
 
+    /* Fluid blob backgrounds */
     body::before {
       content: '';
       position: fixed; top: -200px; right: -200px;
@@ -97,13 +108,13 @@
     header {
       position: relative; z-index: 10;
       width: 100%; max-width: 680px;
-      padding: 20px 24px 0;
+      padding: 14px 16px 0;
       display: flex; justify-content: space-between; align-items: center;
-      gap: 12px;
+      gap: 10px; flex-shrink: 0;
     }
 
     .site-title {
-      font-size: clamp(1.1rem, 3.5vw, 1.45rem);
+      font-size: clamp(0.95rem, 3.2vw, 1.45rem);
       font-weight: 800;
       letter-spacing: -0.02em;
       color: var(--text-main);
@@ -114,17 +125,33 @@
     html[lang="en"] .site-title { font-family: var(--font-en); }
     .site-title .accent { color: var(--mint-dark); }
 
+    /* Header right cluster: lang toggle + fullscreen btn */
+    .header-right { display: flex; align-items: center; gap: 7px; }
+
     .lang-btn {
       display: flex; align-items: center; gap: 6px;
       background: var(--surface); border: 1.5px solid var(--border);
       border-radius: var(--r-full);
-      padding: 7px 14px;
-      font-family: var(--font-en); font-size: 0.78rem; font-weight: 600;
+      padding: 6px 12px;
+      font-family: var(--font-en); font-size: 0.75rem; font-weight: 600;
       color: var(--text-muted);
-      cursor: pointer; min-height: 36px;
+      cursor: pointer; min-height: 34px;
       transition: all 0.18s ease;
     }
     .lang-btn:hover { border-color: var(--mint); color: var(--mint-dark); background: var(--mint-faint); }
+
+    /* Fullscreen toggle button */
+    #fullscreenBtn {
+      display: flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px;
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: var(--r-full);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      color: var(--text-muted);
+    }
+    #fullscreenBtn:hover { border-color: var(--mint); background: var(--mint-faint); color: var(--mint-dark); }
 
     /* ─── DateTime strip ───────────────────────────────────────────── */
     .datetime-strip {
@@ -134,15 +161,15 @@
       border: 1px solid var(--border);
       border-radius: var(--r-full);
       overflow: hidden;
-      font-size: 0.8rem; font-weight: 500;
-      width: auto;
+      font-size: 0.75rem; font-weight: 500;
+      width: auto; flex-shrink: 0;
     }
     .dt-segment {
-      display: flex; align-items: center; gap: 5px;
-      padding: 7px 16px;
+      display: flex; align-items: center; gap: 4px;
+      padding: 6px 12px;
     }
     .dt-segment + .dt-segment { border-left: 1px solid var(--border); }
-    .dt-icon { font-size: 0.85rem; opacity: 0.7; }
+    .dt-icon { font-size: 0.8rem; opacity: 0.7; }
     .dt-label { color: var(--text-muted); font-weight: 500; white-space: nowrap; }
     .dt-value { font-weight: 700; color: var(--text-main); white-space: nowrap; letter-spacing: 0.01em; }
     html[lang="ne"] .dt-label,
@@ -152,27 +179,30 @@
     main {
       position: relative; z-index: 10;
       width: 100%; max-width: 680px;
-      padding: 20px 24px 40px;
+      padding: 12px 16px 20px;
       display: flex; flex-direction: column; align-items: center;
-      gap: 20px; flex: 1;
+      /* Use gap + let main fill but not overflow */
+      gap: 12px; flex: 1;
+      min-height: 0;
     }
 
     /* ─── Mode Tabs ────────────────────────────────────────────────── */
     .mode-tabs {
-      display: flex; gap: 4px;
+      display: flex; gap: 3px;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--r-full);
-      padding: 4px;
+      padding: 3px;
       width: 100%; max-width: 420px;
+      flex-shrink: 0;
     }
     .mode-tab {
       flex: 1; border: none; background: transparent;
       border-radius: var(--r-full);
-      padding: 9px 6px;
-      font-size: clamp(0.68rem, 2vw, 0.8rem); font-weight: 600;
+      padding: 7px 4px;
+      font-size: clamp(0.62rem, 1.9vw, 0.8rem); font-weight: 600;
       color: var(--text-muted);
-      cursor: pointer; min-height: var(--btn-h);
+      cursor: pointer; min-height: 40px;
       transition: all 0.18s ease; white-space: nowrap;
     }
     html[lang="ne"] .mode-tab { font-family: var(--font-ne); }
@@ -186,13 +216,14 @@
     /* ─── Session pips ─────────────────────────────────────────────── */
     .lap-row {
       display: flex; align-items: center; gap: 8px;
-      font-size: 0.78rem; font-weight: 600; color: var(--text-muted);
+      font-size: 0.74rem; font-weight: 600; color: var(--text-muted);
+      flex-shrink: 0;
     }
     html[lang="ne"] .lap-row { font-family: var(--font-ne); }
     html[lang="en"] .lap-row { font-family: var(--font-en); }
-    .pips { display: flex; gap: 7px; align-items: center; }
+    .pips { display: flex; gap: 6px; align-items: center; }
     .pip {
-      width: 9px; height: 9px; border-radius: 50%;
+      width: 8px; height: 8px; border-radius: 50%;
       background: var(--border); transition: background 0.3s, transform 0.2s;
     }
     .pip.done { background: var(--mint); transform: scale(1.2); }
@@ -201,11 +232,19 @@
     .timer-container {
       position: relative;
       display: flex; align-items: center; justify-content: center;
-      width: 100%; min-height: 300px;
+      /* Responsive height so it doesn't overflow on small screens */
+      width: min(280px, 80vw);
+      height: min(280px, 80vw);
+      flex-shrink: 0;
     }
     #fluidMeterContainer canvas {
       display: block; border-radius: 50%;
       box-shadow: var(--shadow-md);
+      width: 100% !important;
+      height: 100% !important;
+    }
+    #fluidMeterContainer {
+      width: 100%; height: 100%;
     }
     .timer-inner {
       position: absolute; top: 50%; left: 50%;
@@ -213,6 +252,7 @@
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       gap: 4px; pointer-events: none;
+      width: 100%;
     }
     #timerDisplay {
       font-size: var(--timer-size);
@@ -227,8 +267,8 @@
       background: rgba(255,255,255,0.75);
       backdrop-filter: blur(6px);
       border-radius: var(--r-full);
-      padding: 3px 12px;
-      font-size: clamp(0.65rem, 1.8vw, 0.82rem);
+      padding: 3px 10px;
+      font-size: clamp(0.6rem, 1.6vw, 0.8rem);
       font-weight: 700; color: var(--text-muted);
     }
     html[lang="ne"] .mode-label-badge { font-family: var(--font-ne); }
@@ -236,22 +276,23 @@
 
     /* ─── Controls ─────────────────────────────────────────────────── */
     .controls {
-      display: flex; gap: 10px;
+      display: flex; gap: 8px;
       flex-wrap: wrap; justify-content: center;
       width: 100%; max-width: 480px;
+      flex-shrink: 0;
     }
     .btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       border: none; border-radius: var(--r-full);
-      min-height: var(--btn-h); padding: 0 28px;
-      font-size: 0.88rem; font-weight: 700;
+      min-height: var(--btn-h); padding: 0 22px;
+      font-size: 0.84rem; font-weight: 700;
       cursor: pointer; transition: transform 0.1s, box-shadow 0.15s, background 0.15s;
     }
     html[lang="ne"] .btn { font-family: var(--font-ne); }
     html[lang="en"] .btn { font-family: var(--font-en); }
     .btn:active { transform: scale(0.95); }
     .btn-primary { background: var(--mint); color: #fff; box-shadow: 0 4px 20px rgba(118,200,161,0.45); }
-    .btn-primary:hover { background: var(--mint-dark); box-shadow: 0 4px 24px rgba(118,200,161,0.55); }
+    .btn-primary:hover { background: var(--mint-dark); }
     .btn-ghost { background: var(--surface); color: var(--text-muted); border: 1.5px solid var(--border); }
     .btn-ghost:hover { border-color: var(--mint); color: var(--mint-dark); background: var(--mint-faint); }
     .btn-amber { background: var(--amber); color: #000; box-shadow: 0 4px 16px rgba(246,194,68,0.35); }
@@ -259,24 +300,25 @@
 
     /* ─── Keyboard hint ────────────────────────────────────────────── */
     .kbd-hint {
-      font-size: 0.7rem; color: var(--text-light); text-align: center;
-      font-family: var(--font-en);
+      font-size: 0.65rem; color: var(--text-light); text-align: center;
+      font-family: var(--font-en); flex-shrink: 0;
     }
     kbd {
       display: inline-block;
       border: 1px solid var(--border); border-radius: 4px;
-      padding: 1px 5px; font-family: monospace;
-      background: var(--surface); font-size: 0.68rem;
+      padding: 1px 4px; font-family: monospace;
+      background: var(--surface); font-size: 0.63rem;
     }
 
     /* ─── Footer ────────────────────────────────────────────────────── */
     footer {
       position: relative; z-index: 10;
       width: 100%; max-width: 680px;
-      padding: 16px 24px;
+      padding: 10px 16px;
       text-align: center;
-      font-size: 0.72rem; color: var(--text-light);
+      font-size: 0.66rem; color: var(--text-light);
       border-top: 1px solid var(--border);
+      flex-shrink: 0;
     }
     html[lang="ne"] footer { font-family: var(--font-ne); }
     html[lang="en"] footer { font-family: var(--font-en); }
@@ -291,22 +333,22 @@
       background: var(--bg);
       border: 1.5px solid var(--mint);
       border-radius: var(--r-xl);
-      padding: 22px 22px 16px;
+      padding: 20px 20px 14px;
       box-shadow: var(--shadow-lg);
       transition: bottom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    #reportPanel.visible { bottom: 28px; }
+    #reportPanel.visible { bottom: 24px; }
     .report-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-    .report-emoji { font-size: 1.6rem; }
+    .report-emoji { font-size: 1.4rem; }
     .report-close-btn {
       background: none; border: none; cursor: pointer;
       color: var(--text-muted); font-size: 1rem; padding: 2px 6px;
       border-radius: var(--r-xs);
     }
     .report-close-btn:hover { color: var(--text-main); background: var(--surface); }
-    .report-body { margin-bottom: 14px; }
+    .report-body { margin-bottom: 12px; }
     #reportText {
-      font-size: clamp(0.88rem, 2.2vw, 1rem);
+      font-size: clamp(0.82rem, 2.1vw, 0.95rem);
       font-weight: 600; line-height: 1.55;
       color: var(--text-main);
     }
@@ -316,8 +358,8 @@
     .report-copy-btn {
       display: inline-flex; align-items: center; gap: 6px;
       background: var(--mint-faint); border: 1.5px solid var(--mint);
-      border-radius: var(--r-full); padding: 7px 16px;
-      font-size: 0.8rem; font-weight: 700;
+      border-radius: var(--r-full); padding: 6px 14px;
+      font-size: 0.78rem; font-weight: 700;
       color: var(--mint-dark); cursor: pointer;
       transition: all 0.15s;
     }
@@ -326,7 +368,7 @@
     html[lang="en"] .report-copy-btn { font-family: var(--font-en); }
     .report-progress-bar {
       height: 3px; background: var(--border);
-      border-radius: 2px; overflow: hidden; margin-top: 14px;
+      border-radius: 2px; overflow: hidden; margin-top: 12px;
     }
     .report-progress-inner {
       height: 100%; width: 100%;
@@ -340,8 +382,8 @@
       position: fixed; top: 20px; left: 50%;
       transform: translateX(-50%) translateY(-80px);
       background: #1f2937; color: #fff;
-      border-radius: var(--r-full); padding: 8px 20px;
-      font-size: 0.82rem; font-weight: 600;
+      border-radius: var(--r-full); padding: 7px 18px;
+      font-size: 0.8rem; font-weight: 600;
       transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
       z-index: 500; pointer-events: none;
       white-space: nowrap;
@@ -355,14 +397,14 @@
       display: none; position: fixed; inset: 0;
       background: rgba(0,0,0,0.4); backdrop-filter: blur(6px);
       z-index: 400; align-items: center; justify-content: center;
-      padding: 20px;
+      padding: 16px;
     }
     .modal-overlay.open { display: flex; }
 
     /* ─── Settings modal ────────────────────────────────────────────── */
     .settings-card {
       background: var(--bg); border-radius: var(--r-xl);
-      width: min(90vw, 400px); padding: 28px 28px 24px;
+      width: min(90vw, 400px); padding: 24px 24px 20px;
       box-shadow: var(--shadow-lg);
       animation: popIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
       max-height: 90vh; overflow-y: auto;
@@ -372,60 +414,57 @@
       to   { opacity: 1; transform: scale(1) translateY(0); }
     }
     .settings-title {
-      font-size: 1rem; font-weight: 700; margin-bottom: 20px; color: var(--text-main);
+      font-size: 0.95rem; font-weight: 700; margin-bottom: 18px; color: var(--text-main);
     }
     html[lang="ne"] .settings-title { font-family: var(--font-ne); }
     html[lang="en"] .settings-title { font-family: var(--font-en); }
     .setting-row {
       display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
     .setting-label {
-      font-size: 0.88rem; font-weight: 500; color: var(--text-muted);
+      font-size: 0.85rem; font-weight: 500; color: var(--text-muted);
     }
     html[lang="ne"] .setting-label { font-family: var(--font-ne); }
     html[lang="en"] .setting-label { font-family: var(--font-en); }
     .setting-row input[type="number"] {
-      width: 90px; padding: 8px 12px;
+      width: 80px; padding: 7px 10px;
       border-radius: var(--r-full); border: 1.5px solid var(--border);
-      text-align: center; font-size: 0.9rem; font-weight: 600;
+      text-align: center; font-size: 0.88rem; font-weight: 600;
       font-family: var(--font-en);
       transition: border-color 0.15s;
     }
     .setting-row input[type="number"]:focus { outline: none; border-color: var(--mint); }
 
-    /* ─── Settings section divider ─────────────────────────────────── */
     .settings-section-title {
-      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.07em; color: var(--text-light);
-      margin: 20px 0 12px;
+      margin: 18px 0 10px;
     }
-    html[lang="ne"] .settings-section-title { font-family: var(--font-ne); letter-spacing: 0; text-transform: none; font-size: 0.78rem; }
+    html[lang="ne"] .settings-section-title { font-family: var(--font-ne); letter-spacing: 0; text-transform: none; font-size: 0.76rem; }
     html[lang="en"] .settings-section-title { font-family: var(--font-en); }
 
-    /* ─── Settings checkbox rows ────────────────────────────────────── */
     .setting-check-row {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 10px 0;
+      padding: 9px 0;
       border-bottom: 1px solid var(--border);
     }
     .setting-check-row:last-of-type { border-bottom: none; }
     .setting-check-label {
-      font-size: 0.88rem; font-weight: 500; color: var(--text-main);
+      font-size: 0.85rem; font-weight: 500; color: var(--text-main);
       line-height: 1.3;
     }
     .setting-check-sub {
-      font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;
+      font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;
     }
     html[lang="ne"] .setting-check-label,
     html[lang="ne"] .setting-check-sub { font-family: var(--font-ne); }
     html[lang="en"] .setting-check-label,
     html[lang="en"] .setting-check-sub { font-family: var(--font-en); }
 
-    /* Toggle switch */
     .toggle-switch {
       position: relative; width: 44px; height: 24px;
-      flex-shrink: 0; margin-left: 12px;
+      flex-shrink: 0; margin-left: 10px;
     }
     .toggle-switch input { opacity: 0; width: 0; height: 0; }
     .toggle-slider {
@@ -445,10 +484,10 @@
     .toggle-switch input:checked + .toggle-slider { background: var(--mint); }
     .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
 
-    .settings-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+    .settings-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
     .btn-sm {
-      padding: 8px 18px; border-radius: var(--r-full); border: none;
-      font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+      padding: 7px 16px; border-radius: var(--r-full); border: none;
+      font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
     }
     .btn-sm-ghost { background: var(--surface); color: var(--text-muted); }
     .btn-sm-ghost:hover { color: var(--text-main); }
@@ -458,7 +497,7 @@
     html[lang="en"] .btn-sm { font-family: var(--font-en); }
 
     /* ─── History modal ─────────────────────────────────────────────── */
-    #historyOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(6px); z-index: 450; align-items: center; justify-content: center; padding: 20px; }
+    #historyOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(6px); z-index: 450; align-items: center; justify-content: center; padding: 16px; }
     #historyOverlay.open { display: flex; }
     #historyModal {
       background: var(--bg); border-radius: var(--r-xl);
@@ -468,37 +507,37 @@
       animation: popIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
     }
     .history-header {
-      padding: 22px 24px 18px;
+      padding: 18px 20px 14px;
       border-bottom: 1px solid var(--border);
       display: flex; justify-content: space-between; align-items: center;
     }
-    .history-title { font-size: 1.05rem; font-weight: 700; color: var(--text-main); }
+    .history-title { font-size: 1rem; font-weight: 700; color: var(--text-main); }
     html[lang="ne"] .history-title { font-family: var(--font-ne); }
     html[lang="en"] .history-title { font-family: var(--font-en); }
     .history-close {
-      width: 32px; height: 32px; border-radius: 50%;
+      width: 30px; height: 30px; border-radius: 50%;
       background: var(--surface); border: none; cursor: pointer;
-      font-size: 1rem; color: var(--text-muted);
+      font-size: 0.95rem; color: var(--text-muted);
       display: flex; align-items: center; justify-content: center;
       transition: all 0.15s;
     }
     .history-close:hover { background: var(--border); color: var(--text-main); }
-    .history-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
-    .history-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+    .history-body { padding: 18px 20px; overflow-y: auto; flex: 1; }
+    .history-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
     .summary-card {
       background: var(--surface); border-radius: var(--r-md);
-      padding: 14px 16px; border: 1px solid var(--border);
+      padding: 12px 14px; border: 1px solid var(--border);
     }
     .summary-card-label {
-      font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+      font-size: 0.68rem; font-weight: 600; text-transform: uppercase;
       letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 4px;
     }
     html[lang="ne"] .summary-card-label { font-family: var(--font-ne); letter-spacing: 0; text-transform: none; }
     html[lang="en"] .summary-card-label { font-family: var(--font-en); }
-    .summary-card-value { font-size: 1.5rem; font-weight: 800; color: var(--text-main); line-height: 1.1; }
+    .summary-card-value { font-size: 1.4rem; font-weight: 800; color: var(--text-main); line-height: 1.1; }
     html[lang="ne"] .summary-card-value { font-family: var(--font-ne); }
     html[lang="en"] .summary-card-value { font-family: var(--font-en); }
-    .summary-card-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+    .summary-card-sub { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; }
     html[lang="ne"] .summary-card-sub { font-family: var(--font-ne); }
     html[lang="en"] .summary-card-sub { font-family: var(--font-en); }
     .summary-card.accent-mint { border-color: var(--mint); background: var(--mint-faint); }
@@ -506,50 +545,51 @@
     .summary-card.accent-amber { border-color: var(--amber); background: var(--amber-light); }
     .summary-card.accent-amber .summary-card-value { color: var(--amber-dark); }
     .history-log-title {
-      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.08em; color: var(--text-muted);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
-    html[lang="ne"] .history-log-title { font-family: var(--font-ne); letter-spacing: 0; text-transform: none; font-size: 0.8rem; }
+    html[lang="ne"] .history-log-title { font-family: var(--font-ne); letter-spacing: 0; text-transform: none; font-size: 0.76rem; }
     html[lang="en"] .history-log-title { font-family: var(--font-en); }
-    .session-log { display: flex; flex-direction: column; gap: 7px; }
+    .session-log { display: flex; flex-direction: column; gap: 6px; }
     .session-entry {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 11px 14px;
+      padding: 10px 12px;
       background: var(--surface); border-radius: var(--r-sm);
       border: 1px solid var(--border);
       transition: border-color 0.15s;
     }
     .session-entry:hover { border-color: var(--mint); }
-    .session-entry-left { display: flex; align-items: center; gap: 10px; }
-    .session-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--mint); flex-shrink: 0; }
-    .session-label { font-size: 0.84rem; font-weight: 600; color: var(--text-main); }
+    .session-entry-left { display: flex; align-items: center; gap: 9px; }
+    .session-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--mint); flex-shrink: 0; }
+    .session-label { font-size: 0.82rem; font-weight: 600; color: var(--text-main); }
     html[lang="ne"] .session-label { font-family: var(--font-ne); }
     html[lang="en"] .session-label { font-family: var(--font-en); }
-    .session-time { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-en); font-weight: 500; }
+    .session-time { font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-en); font-weight: 500; }
     .session-duration {
-      font-size: 0.78rem; font-weight: 600; color: var(--mint-dark);
+      font-size: 0.74rem; font-weight: 600; color: var(--mint-dark);
       background: var(--mint-faint); border-radius: var(--r-full);
-      padding: 3px 10px; font-family: var(--font-en);
+      padding: 2px 9px; font-family: var(--font-en);
     }
-    .history-empty { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 0.9rem; }
+    .history-empty { text-align: center; padding: 36px 18px; color: var(--text-muted); font-size: 0.88rem; }
     html[lang="ne"] .history-empty { font-family: var(--font-ne); }
     html[lang="en"] .history-empty { font-family: var(--font-en); }
-    .history-empty .empty-icon { font-size: 2.5rem; display: block; margin-bottom: 10px; opacity: 0.4; }
+    .history-empty .empty-icon { font-size: 2.4rem; display: block; margin-bottom: 10px; opacity: 0.4; }
 
     /* ─── Auto indicator badge ──────────────────────────────────────── */
     #autoBadge {
       display: none;
       align-items: center; gap: 5px;
       background: var(--mint-faint); border: 1px solid var(--mint);
-      border-radius: var(--r-full); padding: 4px 12px;
-      font-size: 0.72rem; font-weight: 700; color: var(--mint-dark);
+      border-radius: var(--r-full); padding: 3px 10px;
+      font-size: 0.68rem; font-weight: 700; color: var(--mint-dark);
+      flex-shrink: 0;
     }
     #autoBadge.visible { display: flex; }
     html[lang="ne"] #autoBadge { font-family: var(--font-ne); }
     html[lang="en"] #autoBadge { font-family: var(--font-en); }
     .auto-dot {
-      width: 7px; height: 7px; border-radius: 50%;
+      width: 6px; height: 6px; border-radius: 50%;
       background: var(--mint);
       animation: pulseDot 1.4s ease-in-out infinite;
     }
@@ -560,30 +600,180 @@
 
     /* ─── History FAB ───────────────────────────────────────────────── */
     #historyBtn {
-      position: fixed; bottom: 24px; right: 24px;
-      width: 52px; height: 52px; border-radius: 50%;
+      position: fixed; bottom: 20px; right: 16px;
+      width: 48px; height: 48px; border-radius: 50%;
       background: var(--amber); border: none;
-      font-size: 1.25rem; cursor: pointer;
+      font-size: 1.15rem; cursor: pointer;
       box-shadow: 0 4px 16px rgba(246,194,68,0.5);
       z-index: 150; transition: transform 0.15s, box-shadow 0.15s;
       display: flex; align-items: center; justify-content: center;
     }
-    #historyBtn:hover { transform: scale(1.08); box-shadow: 0 6px 22px rgba(246,194,68,0.6); }
+    #historyBtn:hover { transform: scale(1.08); }
     #historyBtn:active { transform: scale(0.95); }
+
+    /* ══════════════════════════════════════════════════════════════
+       FULLSCREEN MODE
+       - Shows only the countdown + fluid animation background
+       - Hides all other UI elements
+       ══════════════════════════════════════════════════════════════ */
+    /* Fullscreen overlay */
+    #fullscreenOverlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 800;
+      background: #fff;
+      align-items: center; justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      overflow: hidden;
+    }
+    #fullscreenOverlay.active { display: flex; }
+
+    /* Fluid blobs in fullscreen */
+    #fullscreenOverlay::before {
+      content: '';
+      position: absolute; top: -20%; right: -10%;
+      width: 70vmin; height: 70vmin; border-radius: 50%;
+      background: radial-gradient(circle, rgba(118,200,161,0.22) 0%, transparent 70%);
+      pointer-events: none;
+      animation: blobFloat1 8s ease-in-out infinite alternate;
+    }
+    #fullscreenOverlay::after {
+      content: '';
+      position: absolute; bottom: -20%; left: -10%;
+      width: 60vmin; height: 60vmin; border-radius: 50%;
+      background: radial-gradient(circle, rgba(246,194,68,0.18) 0%, transparent 70%);
+      pointer-events: none;
+      animation: blobFloat2 10s ease-in-out infinite alternate;
+    }
+    @keyframes blobFloat1 {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(-5%,8%) scale(1.12); }
+    }
+    @keyframes blobFloat2 {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(6%,-7%) scale(1.08); }
+    }
+
+    /* Extra decorative blob */
+    .fs-blob3 {
+      position: absolute; top: 40%; left: 60%;
+      width: 40vmin; height: 40vmin; border-radius: 50%;
+      background: radial-gradient(circle, rgba(118,200,161,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      animation: blobFloat2 12s ease-in-out infinite alternate-reverse;
+    }
+
+    /* Fullscreen timer display */
+    #fsTimerDisplay {
+      position: relative; z-index: 1;
+      font-size: clamp(5rem, 25vw, 22rem);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      color: var(--text-main);
+      text-shadow: 0 4px 32px rgba(118,200,161,0.25);
+      letter-spacing: -0.03em;
+      user-select: none;
+    }
+    html[lang="ne"] #fsTimerDisplay { font-family: var(--font-timer-ne); }
+    html[lang="en"] #fsTimerDisplay { font-family: var(--font-timer-en); }
+
+    #fsModeLabel {
+      position: relative; z-index: 1;
+      font-size: clamp(0.9rem, 3vw, 1.6rem);
+      font-weight: 600;
+      color: var(--text-muted);
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(8px);
+      border-radius: var(--r-full);
+      padding: 6px 20px;
+    }
+    html[lang="ne"] #fsModeLabel { font-family: var(--font-ne); }
+    html[lang="en"] #fsModeLabel { font-family: var(--font-en); }
+
+    /* Exit fullscreen button (top-right corner) */
+    #fsExitBtn {
+      position: absolute; top: 16px; right: 16px; z-index: 2;
+      width: 42px; height: 42px; border-radius: 50%;
+      background: rgba(255,255,255,0.8); border: 1.5px solid var(--border);
+      font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted);
+      transition: all 0.18s;
+      backdrop-filter: blur(6px);
+    }
+    #fsExitBtn:hover { background: #fff; color: var(--text-main); }
+
+    /* ─── PWA install prompt ─────────────────────────────────────── */
+    #installBanner {
+      display: none;
+      position: fixed; bottom: 80px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg); border: 1.5px solid var(--mint);
+      border-radius: var(--r-xl); padding: 14px 18px;
+      box-shadow: var(--shadow-lg); z-index: 250;
+      width: min(88vw, 380px);
+      align-items: center; gap: 12px;
+    }
+    #installBanner.show { display: flex; }
+    .install-icon { font-size: 1.6rem; flex-shrink: 0; }
+    .install-text { flex: 1; }
+    .install-title { font-size: 0.85rem; font-weight: 700; color: var(--text-main); }
+    .install-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 1px; }
+    html[lang="ne"] .install-title,
+    html[lang="ne"] .install-sub { font-family: var(--font-ne); }
+    .install-btns { display: flex; gap: 6px; }
+    .install-yes {
+      background: var(--mint); color: #fff; border: none;
+      border-radius: var(--r-full); padding: 6px 14px;
+      font-size: 0.78rem; font-weight: 700; cursor: pointer;
+    }
+    .install-no {
+      background: var(--surface); color: var(--text-muted); border: 1px solid var(--border);
+      border-radius: var(--r-full); padding: 6px 10px;
+      font-size: 0.78rem; font-weight: 600; cursor: pointer;
+    }
 
     /* ─── Responsive ────────────────────────────────────────────────── */
     @media (max-width: 480px) {
-      header, main { padding-inline: 16px; }
-      .datetime-strip { font-size: 0.72rem; }
-      .dt-segment { padding: 6px 12px; }
-      .controls { gap: 8px; }
-      .btn { padding: 0 18px; }
-      .history-summary { grid-template-columns: 1fr 1fr; gap: 8px; }
+      :root {
+        --timer-size: clamp(2.8rem, 13vw, 5.5rem);
+        --btn-h: 42px;
+      }
+      header, main { padding-inline: 12px; }
+      header { padding-top: 10px; }
+      main { gap: 9px; padding-top: 10px; padding-bottom: 12px; }
+      .datetime-strip { font-size: 0.68rem; }
+      .dt-segment { padding: 5px 10px; }
+      .controls { gap: 6px; }
+      .btn { padding: 0 14px; font-size: 0.8rem; }
+      .timer-container {
+        width: min(240px, 74vw);
+        height: min(240px, 74vw);
+      }
+      footer { padding: 8px 12px; font-size: 0.6rem; }
+      .kbd-hint { font-size: 0.6rem; }
+      #historyBtn { bottom: 14px; right: 12px; width: 44px; height: 44px; }
     }
-    @media (max-width: 340px) {
+
+    @media (max-width: 360px) {
+      :root { --timer-size: clamp(2.4rem, 12vw, 4.5rem); }
+      .timer-container { width: min(210px, 72vw); height: min(210px, 72vw); }
       .datetime-strip { flex-direction: column; border-radius: var(--r-lg); }
       .dt-segment + .dt-segment { border-left: none; border-top: 1px solid var(--border); }
       .history-summary { grid-template-columns: 1fr; }
+      .btn { padding: 0 12px; font-size: 0.76rem; }
+    }
+
+    /* Landscape phones: reduce vertical gaps */
+    @media (max-height: 600px) and (orientation: landscape) {
+      main { gap: 6px; padding-top: 6px; padding-bottom: 8px; }
+      .timer-container { width: min(180px, 40vh); height: min(180px, 40vh); }
+      :root { --timer-size: clamp(2rem, 10vh, 5rem); }
+      .datetime-strip { display: none; }
+      #autoBadge { display: none !important; }
+      .lap-row { display: none; }
+      .kbd-hint { display: none; }
     }
   </style>
 </head>
@@ -591,7 +781,10 @@
 
 <header>
   <h1 class="site-title" id="siteTitle">टिक्-टिक् <span class="accent">Pomodoro</span></h1>
-  <button id="langToggle" class="lang-btn" aria-label="Switch language">English</button>
+  <div class="header-right">
+    <button id="fullscreenBtn" aria-label="Toggle fullscreen" title="Fullscreen mode">⛶</button>
+    <button id="langToggle" class="lang-btn" aria-label="Switch language">English</button>
+  </div>
 </header>
 
 <main>
@@ -648,19 +841,26 @@
     <button class="btn btn-ghost ui-text"   id="resetBtn">↺ रिसेट</button>
     <button class="btn btn-amber ui-text"   id="settingsBtn">⚙ सेट</button>
   </div>
-  <p class="kbd-hint"><kbd>Space</kbd> सुरु/रोक · <kbd>R</kbd> रिसेट · <kbd>L</kbd> भाषा · <kbd>H</kbd> इतिहास</p>
+  <p class="kbd-hint"><kbd>Space</kbd> सुरु/रोक · <kbd>R</kbd> रिसेट · <kbd>L</kbd> भाषा · <kbd>H</kbd> इतिहास · <kbd>F</kbd> फुलस्क्रिन</p>
 </main>
 
 <footer>
-  <p id="footerText" class="ui-text">© २०८२ विवेक राई · सर्वाधिकार सुरक्षित   | Created with ❤️ by Bibek Rai</p>
+  <p id="footerText" class="ui-text">© २०८२ विवेक राई · सर्वाधिकार सुरक्षित | Created with ❤️ by Bibek Rai</p>
 </footer>
+
+<!-- ── Fullscreen overlay ───────────────────────────────────────── -->
+<div id="fullscreenOverlay" role="dialog" aria-modal="true" aria-label="Fullscreen timer">
+  <div class="fs-blob3"></div>
+  <button id="fsExitBtn" aria-label="Exit fullscreen" title="Exit fullscreen">✕</button>
+  <div id="fsTimerDisplay">२५:००</div>
+  <div id="fsModeLabel" class="ui-text">काम</div>
+</div>
 
 <!-- Settings modal -->
 <div id="settingsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
   <div class="settings-card">
     <p class="settings-title ui-text" id="settingsModalTitle">⏲ समायोजन गर्नुहोस् (मिनेट)</p>
 
-    <!-- Duration rows -->
     <div class="setting-row">
       <label class="setting-label ui-text" for="setWorkMins">🍅 कामको समय</label>
       <input type="number" id="setWorkMins" value="25" min="1" max="180" aria-label="Work minutes" />
@@ -674,7 +874,6 @@
       <input type="number" id="setLongMins" value="15" min="1" max="90" aria-label="Long break minutes" />
     </div>
 
-    <!-- Sound settings section -->
     <p class="settings-section-title ui-text" id="soundSectionTitle">🔊 आवाज सेटिङ</p>
 
     <div class="setting-check-row">
@@ -710,7 +909,6 @@
       </label>
     </div>
 
-    <!-- Auto-session section -->
     <p class="settings-section-title ui-text" id="autoSectionTitle">🔄 स्वत: सत्र</p>
 
     <div class="setting-check-row">
@@ -758,115 +956,133 @@
       <span class="history-title ui-text" id="historyTitleEl">आजको फोकस इतिहास</span>
       <button class="history-close" id="historyModalClose" aria-label="Close history">✕</button>
     </div>
-    <div class="history-body" id="historyContent">
-      <!-- populated by JS -->
-    </div>
+    <div class="history-body" id="historyContent"></div>
   </div>
 </div>
 
 <!-- History FAB -->
 <button id="historyBtn" aria-label="View today's history">📊</button>
 
+<!-- PWA Install Banner -->
+<div id="installBanner" role="alert">
+  <span class="install-icon">🇳🇵</span>
+  <div class="install-text">
+    <div class="install-title" id="installTitle">एप डाउनलोड गर्नुहोस्</div>
+    <div class="install-sub" id="installSub">होमस्क्रिनमा थप्नुहोस् — इन्टरनेट बिना काम गर्छ</div>
+  </div>
+  <div class="install-btns">
+    <button class="install-yes" id="installYes">थप्नुस्</button>
+    <button class="install-no" id="installNo">✕</button>
+  </div>
+</div>
 
 <script>
+/* ═══════════════════════════════════════════════════════════════════
+   PWA MANIFEST — injected inline so no separate file is needed
+   ═══════════════════════════════════════════════════════════════════ */
+(function injectManifest() {
+  const manifest = {
+    name: 'टिक्-टिक् Pomodoro',
+    short_name: 'टिक्-टिक्',
+    description: 'Bilingual Nepali Pomodoro timer',
+    start_url: '.',
+    display: 'standalone',
+    orientation: 'any',
+    theme_color: '#76C8A1',
+    background_color: '#FFFFFF',
+    categories: ['productivity', 'utilities'],
+    icons: [
+      { src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='32' fill='%2376C8A1'/><text y='1em' font-size='140' x='16'>🇳🇵</text></svg>", sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+      { src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%2376C8A1'/><text y='1em' font-size='380' x='40'>🇳🇵</text></svg>", sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement('link');
+  link.rel = 'manifest'; link.href = url;
+  document.head.appendChild(link);
+})();
+
+/* ═══════════════════════════════════════════════════════════════════
+   SERVICE WORKER — inline via blob for offline/PWA support
+   ═══════════════════════════════════════════════════════════════════ */
+(function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  const swCode = `
+const CACHE = 'tiktik-v1';
+const ASSETS = [self.location.origin + self.location.pathname];
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+});
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  e.respondWith(caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
+    const clone = res.clone();
+    caches.open(CACHE).then(c => c.put(e.request, clone));
+    return res;
+  }).catch(() => cached)));
+});
+`;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const url  = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(url, { scope: './' }).catch(() => {});
+})();
+
 /* ═══════════════════════════════════════════════════════════════════
    BIKRAM SAMBAT CONVERTER
    ═══════════════════════════════════════════════════════════════════ */
 const BS_DATA = {
-  2000:[30,32,31,32,31,30,30,30,29,30,29,31],
-  2001:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2002:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2003:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2004:[30,32,31,32,31,30,30,30,29,30,29,31],
-  2005:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2006:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2007:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2008:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2009:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2010:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2011:[31,31,31,32,31,31,29,30,30,29,29,31],
-  2012:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2013:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2014:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2015:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2016:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2017:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2018:[31,32,31,32,31,30,30,30,29,30,29,31],
-  2019:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2020:[31,32,31,32,31,30,30,30,29,29,30,30],
-  2021:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2022:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2023:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2024:[30,32,31,32,31,30,30,30,29,30,29,31],
-  2025:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2026:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2027:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2028:[31,32,31,32,31,30,30,30,29,30,29,31],
-  2029:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2030:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2031:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2032:[30,32,31,32,31,30,30,30,29,30,29,31],
-  2033:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2034:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2035:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2036:[31,32,31,32,31,30,30,30,29,30,29,31],
-  2037:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2038:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2039:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2040:[30,32,31,32,31,30,30,30,29,30,29,31],
-  2041:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2042:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2043:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2044:[31,32,31,32,31,30,30,30,29,30,29,31],
-  2045:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2046:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2047:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2048:[30,32,31,32,31,30,30,30,29,30,29,31],
-  2049:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2050:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2051:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2052:[31,32,31,32,31,30,30,30,29,30,29,31],
-  2053:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2054:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2055:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2056:[30,32,31,32,31,30,30,30,29,30,29,31],
-  2057:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2058:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2059:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2060:[31,32,31,32,31,30,30,30,29,30,29,31],
-  2061:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2062:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2063:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2064:[30,32,31,32,31,30,30,30,29,30,29,31],
-  2065:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2066:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2067:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2068:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2069:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2070:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2071:[31,32,31,32,31,30,30,30,29,30,29,31],
-  2072:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2073:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2074:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2075:[30,32,31,32,31,30,30,30,29,30,29,31],
-  2076:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2077:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2078:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2079:[31,32,31,32,31,30,30,30,29,30,29,31],
-  2080:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2081:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2082:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2083:[30,32,31,32,31,30,30,30,29,30,29,31],
-  2084:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2085:[31,31,32,32,31,30,30,29,30,29,30,30],
-  2086:[31,32,31,32,31,30,30,30,29,29,30,31],
-  2087:[31,32,31,32,31,30,30,30,29,30,29,31],
-  2088:[31,31,32,31,31,31,30,29,30,29,30,30],
-  2089:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2000:[30,32,31,32,31,30,30,30,29,30,29,31],2001:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2002:[31,31,32,32,31,30,30,29,30,29,30,30],2003:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2004:[30,32,31,32,31,30,30,30,29,30,29,31],2005:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2006:[31,31,32,32,31,30,30,29,30,29,30,30],2007:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2008:[31,31,32,31,31,31,30,29,30,29,30,30],2009:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2010:[31,32,31,32,31,30,30,30,29,29,30,31],2011:[31,31,31,32,31,31,29,30,30,29,29,31],
+  2012:[31,31,32,31,31,31,30,29,30,29,30,30],2013:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2014:[31,32,31,32,31,30,30,30,29,29,30,31],2015:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2016:[31,31,32,32,31,30,30,29,30,29,30,30],2017:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2018:[31,32,31,32,31,30,30,30,29,30,29,31],2019:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2020:[31,32,31,32,31,30,30,30,29,29,30,30],2021:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2022:[31,31,32,32,31,30,30,29,30,29,30,30],2023:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2024:[30,32,31,32,31,30,30,30,29,30,29,31],2025:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2026:[31,31,32,32,31,30,30,29,30,29,30,30],2027:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2028:[31,32,31,32,31,30,30,30,29,30,29,31],2029:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2030:[31,31,32,32,31,30,30,29,30,29,30,30],2031:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2032:[30,32,31,32,31,30,30,30,29,30,29,31],2033:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2034:[31,31,32,32,31,30,30,29,30,29,30,30],2035:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2036:[31,32,31,32,31,30,30,30,29,30,29,31],2037:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2038:[31,31,32,32,31,30,30,29,30,29,30,30],2039:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2040:[30,32,31,32,31,30,30,30,29,30,29,31],2041:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2042:[31,31,32,32,31,30,30,29,30,29,30,30],2043:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2044:[31,32,31,32,31,30,30,30,29,30,29,31],2045:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2046:[31,31,32,32,31,30,30,29,30,29,30,30],2047:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2048:[30,32,31,32,31,30,30,30,29,30,29,31],2049:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2050:[31,31,32,32,31,30,30,29,30,29,30,30],2051:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2052:[31,32,31,32,31,30,30,30,29,30,29,31],2053:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2054:[31,31,32,32,31,30,30,29,30,29,30,30],2055:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2056:[30,32,31,32,31,30,30,30,29,30,29,31],2057:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2058:[31,31,32,32,31,30,30,29,30,29,30,30],2059:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2060:[31,32,31,32,31,30,30,30,29,30,29,31],2061:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2062:[31,31,32,32,31,30,30,29,30,29,30,30],2063:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2064:[30,32,31,32,31,30,30,30,29,30,29,31],2065:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2066:[31,31,32,32,31,30,30,29,30,29,30,30],2067:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2068:[31,31,32,31,31,31,30,29,30,29,30,30],2069:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2070:[31,32,31,32,31,30,30,30,29,29,30,31],2071:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2072:[31,31,32,31,31,31,30,29,30,29,30,30],2073:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2074:[31,32,31,32,31,30,30,30,29,29,30,31],2075:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2076:[31,31,32,31,31,31,30,29,30,29,30,30],2077:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2078:[31,32,31,32,31,30,30,30,29,29,30,31],2079:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2080:[31,31,32,31,31,31,30,29,30,29,30,30],2081:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2082:[31,32,31,32,31,30,30,30,29,29,30,31],2083:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2084:[31,31,32,31,31,31,30,29,30,29,30,30],2085:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2086:[31,32,31,32,31,30,30,30,29,29,30,31],2087:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2088:[31,31,32,31,31,31,30,29,30,29,30,30],2089:[31,31,32,32,31,30,30,29,30,29,30,30],
   2090:[31,32,31,32,31,30,30,30,29,29,30,31],
 };
-
-const BS_START_AD = new Date(1943, 3, 14); // Baisakh 1, 2000 BS = April 14, 1943 AD
+const BS_START_AD = new Date(1943, 3, 14);
 
 function adToBS(adDate) {
   let totalDays = Math.floor((adDate - BS_START_AD) / 86400000);
@@ -875,8 +1091,7 @@ function adToBS(adDate) {
     const months = BS_DATA[bsYear] || BS_DATA[2090];
     const daysInYear = months.reduce((a,b)=>a+b,0);
     if (totalDays < daysInYear) break;
-    totalDays -= daysInYear;
-    bsYear++;
+    totalDays -= daysInYear; bsYear++;
   }
   const months = BS_DATA[bsYear] || BS_DATA[2090];
   let bsMonth = 1;
@@ -896,13 +1111,11 @@ const EN_DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','
    NUMERAL HELPERS
    ═══════════════════════════════════════════════════════════════════ */
 const NE_DIGITS = ['०','१','२','३','४','५','६','७','८','९'];
-function toNE(n) {
-  return String(n).replace(/[0-9]/g, d => NE_DIGITS[+d]);
-}
+function toNE(n) { return String(n).replace(/[0-9]/g, d => NE_DIGITS[+d]); }
 function padNE(n) { return toNE(String(n).padStart(2,'0')); }
 
 /* ═══════════════════════════════════════════════════════════════════
-   LOCAL STORAGE WRAPPER (try/catch guard)
+   LOCAL STORAGE WRAPPER
    ═══════════════════════════════════════════════════════════════════ */
 const LS = {
   get(k)    { try { return localStorage.getItem(k); }    catch { return null; } },
@@ -911,46 +1124,152 @@ const LS = {
 };
 
 /* ═══════════════════════════════════════════════════════════════════
-   SOUND SYSTEM
-   ─── Audio elements reference files in src/ folder
+   SOUND SYSTEM — Mobile-compatible AudioContext approach
+   ─────────────────────────────────────────────────────────────────
+   Problem on mobile: HTML Audio elements are blocked until user
+   interaction. The fix:
+   1. Use AudioContext (Web Audio API) which is more permissive
+   2. Unlock audio on first user gesture by resuming context
+   3. Synthesize ticking/bell tones procedurally (no file deps)
+   4. Keep file-based audio as optional enhancement
    ═══════════════════════════════════════════════════════════════════ */
-const AUDIO = {
-  start:   new Audio('src/Start.mp3'),
-  end:     new Audio('src/end.mp3'),
-  ticking: new Audio('src/ticking.mp3'),
-};
-// Prepare ticking to loop
-AUDIO.ticking.loop = true;
+let audioCtx = null;
+let audioUnlocked = false;
+
+/** Create or resume AudioContext after a user gesture */
+function getAudioContext() {
+  if (!audioCtx) {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch { return null; }
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {});
+  }
+  return audioCtx;
+}
+
+/** Unlock audio on first touch/click — required for iOS Safari */
+function unlockAudio() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  // Play a silent buffer to unlock
+  const buf = ctx.createBuffer(1, 1, 22050);
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(ctx.destination);
+  src.start(0);
+}
+// Unlock on any interaction
+['touchstart','touchend','mousedown','keydown','click'].forEach(evt => {
+  document.addEventListener(evt, unlockAudio, { once: true, passive: true });
+});
+
+/**
+ * Synthesize a "start" bell — ascending two-tone chime
+ */
+function synthStart() {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  try {
+    [523.25, 659.25].forEach((freq, i) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.18);
+      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.18);
+      gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + i * 0.18 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.18 + 0.6);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.18);
+      osc.stop(ctx.currentTime + i * 0.18 + 0.65);
+    });
+  } catch {}
+}
+
+/**
+ * Synthesize an "end" bell — triple chime descending
+ */
+function synthEnd() {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  try {
+    [880, 698.46, 523.25].forEach((freq, i) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.22);
+      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.22);
+      gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + i * 0.22 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.22 + 0.9);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.22);
+      osc.stop(ctx.currentTime + i * 0.22 + 1.0);
+    });
+  } catch {}
+}
+
+/* Ticking sound: scheduled repeating clicks via AudioContext */
+let tickInterval = null;
+
+function synthTick() {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  try {
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.04, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.005));
+    }
+    const src  = ctx.createBufferSource();
+    const gain = ctx.createGain();
+    src.buffer = buf;
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    src.connect(gain); gain.connect(ctx.destination);
+    src.start();
+  } catch {}
+}
+
+function startTicking() {
+  if (tickInterval) return;
+  synthTick(); // immediate first tick
+  tickInterval = setInterval(synthTick, 1000);
+}
+
+function stopTicking() {
+  if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
+}
 
 let tickingActive = false;
 
 function playSound(type) {
-  // Guard: check settings
   if (type === 'start'   && !getSoundSetting('chkSoundStart')) return;
   if (type === 'end'     && !getSoundSetting('chkSoundEnd'))   return;
   if (type === 'ticking' && !getSoundSetting('chkSoundTick'))  return;
 
-  const audio = AUDIO[type];
-  if (!audio) return;
-  try {
-    audio.currentTime = 0;
-    audio.play().catch(() => {}); // Silently handle autoplay restrictions
-  } catch {}
+  // Ensure audio context is running before playing
+  const ctx = getAudioContext();
+  if (ctx && ctx.state === 'suspended') {
+    ctx.resume().then(() => doPlaySound(type)).catch(() => {});
+  } else {
+    doPlaySound(type);
+  }
 }
 
-function stopTicking() {
-  try {
-    AUDIO.ticking.pause();
-    AUDIO.ticking.currentTime = 0;
-  } catch {}
-  tickingActive = false;
+function doPlaySound(type) {
+  switch (type) {
+    case 'start':   synthStart(); break;
+    case 'end':     synthEnd();   break;
+    case 'ticking': startTicking(); break;
+  }
 }
 
 function getSoundSetting(id) {
-  // Read live from checkbox if available, else from localStorage
   const el = document.getElementById(id);
   if (el) return el.checked;
-  return LS.get(id) !== 'false'; // default true
+  return LS.get(id) !== 'false';
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -962,17 +1281,18 @@ const MODES = {
   longBreak:  { duration: 15 * 60, labelNe: 'लामो विश्राम',  labelEn: 'Long Break'  },
 };
 
-let currentMode      = 'work';
-let timeLeft         = MODES.work.duration;
-let totalTime        = MODES.work.duration;
-let running          = false;
-let sessionInCycle   = 0;
-let isNepali         = true;
-let rafId            = null;
-let lastTimestamp    = null;
-let fluidMeterInst   = null;
-let reportAutoTimer  = null;
-let autoSession      = true; // auto-start next session
+let currentMode     = 'work';
+let timeLeft        = MODES.work.duration;
+let totalTime       = MODES.work.duration;
+let running         = false;
+let sessionInCycle  = 0;
+let isNepali        = true;
+let rafId           = null;
+let lastTimestamp   = null;
+let fluidMeterInst  = null;
+let reportAutoTimer = null;
+let autoSession     = true;
+let fsMode          = false; // fullscreen state
 
 /* ═══════════════════════════════════════════════════════════════════
    NPT CLOCK  (Nepal Standard Time = UTC+5:45)
@@ -985,38 +1305,28 @@ function getNPTDate() {
 
 function updateClock() {
   const npt = getNPTDate();
-  const h24 = npt.getHours();
-  const min = npt.getMinutes();
-  const isAM   = h24 < 12;
-  const h12    = h24 % 12 || 12;
+  const h24 = npt.getHours(); const min = npt.getMinutes();
+  const isAM = h24 < 12; const h12 = h24 % 12 || 12;
   const minStr = String(min).padStart(2, '0');
-  const periodNe = isAM ? 'पूर्वाह्न' : 'अपराह्न';
-  const periodEn = isAM ? 'AM' : 'PM';
   const timeStr = isNepali
-    ? `${periodNe} ${padNE(h12)}:${toNE(minStr)}`
-    : `${h12}:${minStr} ${periodEn}`;
+    ? `${isAM ? 'पूर्वाह्न' : 'अपराह्न'} ${padNE(h12)}:${toNE(minStr)}`
+    : `${h12}:${minStr} ${isAM ? 'AM' : 'PM'}`;
   document.getElementById('nptTimeValue').textContent = timeStr;
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   NEPALI DATE (BS)
-   ═══════════════════════════════════════════════════════════════════ */
 function updateNepaliDate() {
   const npt = getNPTDate();
   const { bsYear, bsMonth, bsDay, dayOfWeek } = adToBS(npt);
-  let dateStr;
-  if (isNepali) {
-    dateStr = `${toNE(bsYear)} ${NE_MONTHS[bsMonth - 1]} ${toNE(bsDay)}, ${NE_DAYS[dayOfWeek]}`;
-  } else {
-    dateStr = `${bsYear} ${EN_MONTHS[bsMonth - 1]} ${bsDay}, ${EN_DAYS[dayOfWeek]}`;
-  }
+  const dateStr = isNepali
+    ? `${toNE(bsYear)} ${NE_MONTHS[bsMonth-1]} ${toNE(bsDay)}, ${NE_DAYS[dayOfWeek]}`
+    : `${bsYear} ${EN_MONTHS[bsMonth-1]} ${bsDay}, ${EN_DAYS[dayOfWeek]}`;
   document.getElementById('nepaliDateValue').textContent = dateStr;
   document.getElementById('dateLabel').textContent = isNepali ? 'वि.सं.' : 'BS';
   document.getElementById('timeLabel').textContent = isNepali ? 'समय'    : 'NPT';
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   FLUID METER  (embedded)
+   FLUID METER  (embedded, self-contained)
    ═══════════════════════════════════════════════════════════════════ */
 (function () {
   function FluidMeter() {
@@ -1059,17 +1369,17 @@ function updateNepaliDate() {
     }
     function drawBg() {
       context.save(); context.fillStyle = options.backgroundColor;
-      context.beginPath(); context.arc(options.size / 2, options.size / 2, getMR() / 2 - options.borderWidth, 0, 2 * Math.PI);
+      context.beginPath(); context.arc(options.size/2, options.size/2, getMR()/2 - options.borderWidth, 0, 2*Math.PI);
       context.closePath(); context.fill(); context.restore();
     }
     function drawFg() {
       context.save(); context.lineWidth = options.borderWidth; context.strokeStyle = options.foregroundColor;
-      context.beginPath(); context.arc(options.size / 2, options.size / 2, getMR() / 2 - options.borderWidth / 2, 0, 2 * Math.PI);
+      context.beginPath(); context.arc(options.size/2, options.size/2, getMR()/2 - options.borderWidth/2, 0, 2*Math.PI);
       context.closePath(); context.stroke(); context.restore();
     }
     function drawFluid(dt) {
       context.save();
-      context.arc(options.size / 2, options.size / 2, getMR() / 2 - options.borderWidth, 0, Math.PI * 2); context.clip();
+      context.arc(options.size/2, options.size/2, getMR()/2 - options.borderWidth, 0, Math.PI*2); context.clip();
       drawLayer(backgroundFluidLayer, dt); drawLayer(foregroundFluidLayer, dt);
       if (options.drawBubbles) { drawMask(foregroundFluidLayer); drawBubbles(dt); }
       context.restore();
@@ -1097,7 +1407,7 @@ function updateNepaliDate() {
       context.save();
       for (var i = 0; i < bubblesLayer.bubbles.length; i++) {
         var b = bubblesLayer.bubbles[i]; context.beginPath(); context.strokeStyle = "white";
-        context.arc(b.x, b.y, b.r, 2 * Math.PI, false); context.stroke(); context.closePath();
+        context.arc(b.x, b.y, b.r, 2*Math.PI, false); context.stroke(); context.closePath();
         b.velX = Math.abs(b.velX) < Math.abs(bubblesLayer.current) ? b.velX + bubblesLayer.current * dt : bubblesLayer.current;
         b.y -= b.velY * dt; b.x += (bubblesLayer.swing ? 0.4 * Math.cos(bubblesLayer.swing += 0.03) * bubblesLayer.swing : 0) + b.velX * 0.5;
         var mB = (options.size - (options.size - getMR()) / 2) - options.borderWidth,
@@ -1143,15 +1453,17 @@ function buildFluidMeter(percent) {
   if (!container) return;
   container.innerHTML = '';
   const fm = new FluidMeter();
-  const isWork  = currentMode === 'work';
+  const isWork = currentMode === 'work';
   const mainClr = isWork ? '#76C8A1' : '#F6C244';
   const bgClr   = isWork ? '#b8e0cc' : '#FFD966';
+  // Responsive size based on container
+  const sz = Math.min(container.offsetWidth || 280, 280);
   fm.init({
     targetContainer: container,
     fillPercentage: Math.max(0, Math.min(100, percent)),
     options: {
       drawShadow: false, drawText: false, drawBubbles: true,
-      size: 280, borderWidth: 14,
+      size: sz, borderWidth: Math.round(sz * 0.05),
       backgroundColor: '#F8F9FA', foregroundColor: '#E5E7EB',
       foregroundFluidLayer: { fillStyle: mainClr, angularSpeed: 70, maxAmplitude: 11, frequency: 38, horizontalSpeed: -120 },
       backgroundFluidLayer: { fillStyle: bgClr,   angularSpeed: 90, maxAmplitude: 8,  frequency: 32, horizontalSpeed: 130  },
@@ -1159,6 +1471,7 @@ function buildFluidMeter(percent) {
   });
   fluidMeterInst = fm;
 }
+
 function updateFluidPercent() {
   if (fluidMeterInst && totalTime > 0) {
     fluidMeterInst.setPercentage((timeLeft / totalTime) * 100);
@@ -1166,7 +1479,7 @@ function updateFluidPercent() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   LAP / SESSION TRACKING  (localStorage, resets at midnight)
+   LAP / SESSION TRACKING
    ═══════════════════════════════════════════════════════════════════ */
 function todayKey() {
   const npt = getNPTDate();
@@ -1175,7 +1488,7 @@ function todayKey() {
 
 function getLapsToday() {
   const storedDate = LS.get('prana_laps_date');
-  const today      = todayKey();
+  const today = todayKey();
   if (storedDate !== today) {
     LS.set('prana_laps_date', today);
     LS.set('prana_laps_today', '0');
@@ -1203,10 +1516,10 @@ function incrementLap() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   DOCUMENT TITLE UPDATER  (bigtimer.net-inspired)
+   DOCUMENT TITLE UPDATER
    ═══════════════════════════════════════════════════════════════════ */
 function updateDocTitle() {
-  const timeStr = fmtTimeLatin(timeLeft); // always Latin for title readability
+  const timeStr = fmtTimeLatin(timeLeft);
   document.title = `${timeStr} | टिक्-टिक् Nepali Pomodoro`;
 }
 
@@ -1227,7 +1540,10 @@ function fmtTime(secs) {
 }
 
 function renderTimer() {
-  document.getElementById('timerDisplay').textContent = fmtTime(timeLeft);
+  const display = fmtTime(timeLeft);
+  document.getElementById('timerDisplay').textContent = display;
+  // Mirror into fullscreen display
+  document.getElementById('fsTimerDisplay').textContent = display;
   updateFluidPercent();
   updateDocTitle();
 }
@@ -1236,15 +1552,15 @@ function renderPips() {
   [0,1,2,3].forEach(i => {
     document.getElementById(`pip${i}`).classList.toggle('done', i < sessionInCycle);
   });
-  document.getElementById('lapText').textContent =
-    isNepali
-      ? `सत्र: ${toNE(sessionInCycle)}/${toNE(4)}`
-      : `Session: ${sessionInCycle}/4`;
+  document.getElementById('lapText').textContent = isNepali
+    ? `सत्र: ${toNE(sessionInCycle)}/${toNE(4)}`
+    : `Session: ${sessionInCycle}/4`;
 }
 
 function renderModeLabel() {
   const lbl = isNepali ? MODES[currentMode].labelNe : MODES[currentMode].labelEn;
   document.getElementById('modeLabelDisp').textContent = lbl;
+  document.getElementById('fsModeLabel').textContent = lbl;
 }
 
 function clearRaf() {
@@ -1252,10 +1568,9 @@ function clearRaf() {
 }
 
 function setStartPauseBtnText() {
-  document.getElementById('startPauseBtn').textContent =
-    running
-      ? (isNepali ? '⏸ रोक्नुस्' : '⏸ Pause')
-      : (isNepali ? '▶ सुरु'      : '▶ Start');
+  document.getElementById('startPauseBtn').textContent = running
+    ? (isNepali ? '⏸ रोक्नुस्' : '⏸ Pause')
+    : (isNepali ? '▶ सुरु'      : '▶ Start');
 }
 
 function pauseTimer() {
@@ -1263,15 +1578,18 @@ function pauseTimer() {
   running = false;
   clearRaf();
   stopTicking();
+  tickingActive = false;
   setStartPauseBtnText();
 }
 
 function startTimer() {
   if (running) return;
+  // Unlock audio on start press (user gesture)
+  unlockAudio();
   running = true;
   lastTimestamp = null;
   setStartPauseBtnText();
-  playSound('start'); // Play start sound
+  playSound('start');
 
   function tick(ts) {
     if (!running) return;
@@ -1283,19 +1601,25 @@ function startTimer() {
       timeLeft = Math.max(0, timeLeft - secs);
       renderTimer();
 
-      // Handle ticking sound for last 7 seconds
+      // Last-7-second ticking
       if (timeLeft <= 7 && timeLeft > 0) {
         if (!tickingActive && getSoundSetting('chkSoundTick')) {
           tickingActive = true;
-          playSound('ticking');
+          // Resume context explicitly before ticking (mobile fix)
+          const ctx = getAudioContext();
+          if (ctx && ctx.state === 'suspended') {
+            ctx.resume().then(() => { playSound('ticking'); }).catch(() => {});
+          } else {
+            playSound('ticking');
+          }
         }
       } else if (timeLeft > 7 && tickingActive) {
-        stopTicking();
+        stopTicking(); tickingActive = false;
       }
 
       if (timeLeft === 0) {
         running = false; rafId = null;
-        stopTicking();
+        stopTicking(); tickingActive = false;
         onTimerComplete();
         return;
       }
@@ -1308,7 +1632,7 @@ function startTimer() {
 function resetTimer() {
   clearRaf();
   running = false;
-  stopTicking();
+  stopTicking(); tickingActive = false;
   timeLeft = MODES[currentMode].duration;
   totalTime = MODES[currentMode].duration;
   setStartPauseBtnText();
@@ -1318,7 +1642,7 @@ function resetTimer() {
 function switchMode(mode) {
   clearRaf();
   running = false;
-  stopTicking();
+  stopTicking(); tickingActive = false;
   currentMode = mode;
   timeLeft = MODES[mode].duration;
   totalTime = MODES[mode].duration;
@@ -1333,29 +1657,29 @@ function switchMode(mode) {
 
 function onTimerComplete() {
   setStartPauseBtnText();
-  playSound('end'); // Play end sound
+  // Ensure audio context is active — mobile may have suspended it
+  const ctx = getAudioContext();
+  if (ctx && ctx.state === 'suspended') {
+    ctx.resume().then(() => playSound('end')).catch(() => playSound('end'));
+  } else {
+    playSound('end');
+  }
 
   if (currentMode === 'work') {
     const laps = incrementLap();
     sessionInCycle++;
     showReportPanel(laps);
     if (sessionInCycle >= 4) {
-      sessionInCycle = 0;
-      renderPips();
-      switchMode('longBreak');
+      sessionInCycle = 0; renderPips(); switchMode('longBreak');
     } else {
-      renderPips();
-      switchMode('shortBreak');
+      renderPips(); switchMode('shortBreak');
     }
   } else {
     switchMode('work');
   }
 
-  // Auto-session: if enabled, start next session after a short delay
   if (autoSession) {
-    setTimeout(() => {
-      if (!running) startTimer();
-    }, 1500);
+    setTimeout(() => { if (!running) startTimer(); }, 1500);
   }
 }
 
@@ -1364,14 +1688,47 @@ function onTimerComplete() {
    ═══════════════════════════════════════════════════════════════════ */
 function updateAutoBadge() {
   const badge = document.getElementById('autoBadge');
-  if (autoSession) {
-    badge.classList.add('visible');
-  } else {
-    badge.classList.remove('visible');
-  }
+  badge.classList.toggle('visible', autoSession);
   document.getElementById('autoBadgeText').textContent =
     isNepali ? 'स्वत: सत्र सक्रिय' : 'Auto-session active';
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   FULLSCREEN MODE
+   ═══════════════════════════════════════════════════════════════════ */
+function enterFullscreen() {
+  fsMode = true;
+  document.getElementById('fullscreenOverlay').classList.add('active');
+  document.getElementById('fullscreenBtn').title = 'Exit fullscreen';
+  document.getElementById('fullscreenBtn').textContent = '⛶';
+  // Also try native fullscreen on supported browsers
+  const el = document.documentElement;
+  if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  renderModeLabel();
+  renderTimer();
+}
+
+function exitFullscreen() {
+  fsMode = false;
+  document.getElementById('fullscreenOverlay').classList.remove('active');
+  document.getElementById('fullscreenBtn').title = 'Fullscreen mode';
+  // Exit native fullscreen
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+}
+
+function toggleFullscreen() {
+  fsMode ? exitFullscreen() : enterFullscreen();
+}
+
+// Sync when native fullscreen exits via Esc key
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && fsMode) exitFullscreen();
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  if (!document.webkitFullscreenElement && fsMode) exitFullscreen();
+});
 
 /* ═══════════════════════════════════════════════════════════════════
    REPORT PANEL
@@ -1388,12 +1745,10 @@ function showReportPanel(laps) {
 
   const bar = document.getElementById('reportProgressInner');
   bar.style.animation = 'none';
-  void bar.offsetWidth; // reflow
+  void bar.offsetWidth;
   bar.style.animation = '';
 
-  const panel = document.getElementById('reportPanel');
-  panel.classList.add('visible');
-
+  document.getElementById('reportPanel').classList.add('visible');
   if (reportAutoTimer) clearTimeout(reportAutoTimer);
   reportAutoTimer = setTimeout(() => hideReportPanel(), 8000);
 }
@@ -1408,7 +1763,7 @@ function hideReportPanel() {
    ═══════════════════════════════════════════════════════════════════ */
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg; // textContent only — no XSS risk
+  t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
@@ -1428,62 +1783,24 @@ function openHistory() {
     isNe ? 'आजको फोकस इतिहास' : "Today's Focus History";
 
   if (laps === 0) {
-    content.innerHTML = `
-      <div class="history-empty">
-        <span class="empty-icon">🍅</span>
-        ${isNe ? 'आज कुनै कामको सत्र पूरा भएन।' : 'No work sessions completed today.'}
-      </div>`;
+    content.innerHTML = `<div class="history-empty"><span class="empty-icon">🍅</span>${isNe ? 'आज कुनै कामको सत्र पूरा भएन।' : 'No work sessions completed today.'}</div>`;
   } else {
     const lapsDisplay = isNe ? toNE(laps) : laps;
     const minsDisplay = isNe ? `${toNE(totalFocusMins)} मिनेट` : `${totalFocusMins} min`;
-
-    let summaryHTML = `
-      <div class="history-summary">
-        <div class="summary-card accent-mint">
-          <div class="summary-card-label">${isNe ? 'पूरा सत्रहरू' : 'Sessions Done'}</div>
-          <div class="summary-card-value">${lapsDisplay}</div>
-          <div class="summary-card-sub">${isNe ? 'कामको ल्याप्स' : 'work laps'}</div>
-        </div>
-        <div class="summary-card accent-amber">
-          <div class="summary-card-label">${isNe ? 'कुल फोकस समय' : 'Total Focus'}</div>
-          <div class="summary-card-value">${minsDisplay}</div>
-          <div class="summary-card-sub">${isNe ? 'आजको कुल' : "today's total"}</div>
-        </div>
-      </div>`;
-
-    let logHTML = `<div class="history-log-title">${isNe ? 'सत्र विवरण' : 'Session Log'}</div>
-      <div class="session-log">`;
-
+    let summaryHTML = `<div class="history-summary"><div class="summary-card accent-mint"><div class="summary-card-label">${isNe ? 'पूरा सत्रहरू' : 'Sessions Done'}</div><div class="summary-card-value">${lapsDisplay}</div><div class="summary-card-sub">${isNe ? 'कामको ल्याप्स' : 'work laps'}</div></div><div class="summary-card accent-amber"><div class="summary-card-label">${isNe ? 'कुल फोकस समय' : 'Total Focus'}</div><div class="summary-card-value">${minsDisplay}</div><div class="summary-card-sub">${isNe ? 'आजको कुल' : "today's total"}</div></div></div>`;
+    let logHTML = `<div class="history-log-title">${isNe ? 'सत्र विवरण' : 'Session Log'}</div><div class="session-log">`;
     if (log.length > 0) {
-      const reversed = [...log].reverse();
-      reversed.forEach((entry) => {
+      [...log].reverse().forEach(entry => {
         const lapLabel = isNe ? `${toNE(entry.lap)} नम्बर सत्र` : `Session #${entry.lap}`;
         const durLabel = isNe ? `${toNE(entry.duration)} मिनेट` : `${entry.duration} min`;
-        logHTML += `
-          <div class="session-entry">
-            <div class="session-entry-left">
-              <span class="session-dot"></span>
-              <span class="session-label">${lapLabel}</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span class="session-time">${entry.time}</span>
-              <span class="session-duration">${durLabel}</span>
-            </div>
-          </div>`;
+        logHTML += `<div class="session-entry"><div class="session-entry-left"><span class="session-dot"></span><span class="session-label">${lapLabel}</span></div><div style="display:flex;align-items:center;gap:8px"><span class="session-time">${entry.time}</span><span class="session-duration">${durLabel}</span></div></div>`;
       });
     } else {
       for (let i = laps; i >= 1; i--) {
         const lapLabel = isNe ? `${toNE(i)} नम्बर सत्र` : `Session #${i}`;
         const durMins  = Math.round(MODES.work.duration / 60);
         const durLabel = isNe ? `${toNE(durMins)} मिनेट` : `${durMins} min`;
-        logHTML += `
-          <div class="session-entry">
-            <div class="session-entry-left">
-              <span class="session-dot"></span>
-              <span class="session-label">${lapLabel}</span>
-            </div>
-            <span class="session-duration">${durLabel}</span>
-          </div>`;
+        logHTML += `<div class="session-entry"><div class="session-entry-left"><span class="session-dot"></span><span class="session-label">${lapLabel}</span></div><span class="session-duration">${durLabel}</span></div>`;
       }
     }
     logHTML += `</div>`;
@@ -1503,10 +1820,9 @@ function openSettings() {
   document.getElementById('setWorkMins').value  = MODES.work.duration / 60;
   document.getElementById('setShortMins').value = MODES.shortBreak.duration / 60;
   document.getElementById('setLongMins').value  = MODES.longBreak.duration / 60;
-  // Load saved sound & auto preferences
-  document.getElementById('chkSoundStart').checked  = LS.get('snd_start')   !== 'false';
-  document.getElementById('chkSoundEnd').checked    = LS.get('snd_end')     !== 'false';
-  document.getElementById('chkSoundTick').checked   = LS.get('snd_tick')    !== 'false';
+  document.getElementById('chkSoundStart').checked  = LS.get('snd_start')    !== 'false';
+  document.getElementById('chkSoundEnd').checked    = LS.get('snd_end')      !== 'false';
+  document.getElementById('chkSoundTick').checked   = LS.get('snd_tick')     !== 'false';
   document.getElementById('chkAutoSession').checked = LS.get('auto_session') !== 'false';
   document.getElementById('settingsModal').classList.add('open');
 }
@@ -1516,19 +1832,17 @@ function closeSettings() {
 }
 
 function saveSettings() {
-  // Durations
   let w = parseInt(document.getElementById('setWorkMins').value,  10);
   let s = parseInt(document.getElementById('setShortMins').value, 10);
   let l = parseInt(document.getElementById('setLongMins').value,  10);
-  if (isNaN(w) || w < 1) w = 25;  w = Math.min(180, w);
-  if (isNaN(s) || s < 1) s = 5;   s = Math.min(60, s);
-  if (isNaN(l) || l < 1) l = 15;  l = Math.min(90, l);
+  if (isNaN(w) || w < 1) w = 25; w = Math.min(180, w);
+  if (isNaN(s) || s < 1) s = 5;  s = Math.min(60, s);
+  if (isNaN(l) || l < 1) l = 15; l = Math.min(90, l);
   MODES.work.duration       = w * 60;
   MODES.shortBreak.duration = s * 60;
   MODES.longBreak.duration  = l * 60;
   LS.set('custom_work', w); LS.set('custom_short', s); LS.set('custom_long', l);
 
-  // Sound settings
   const sStart = document.getElementById('chkSoundStart').checked;
   const sEnd   = document.getElementById('chkSoundEnd').checked;
   const sTick  = document.getElementById('chkSoundTick').checked;
@@ -1536,16 +1850,14 @@ function saveSettings() {
   LS.set('snd_end',   sEnd   ? 'true' : 'false');
   LS.set('snd_tick',  sTick  ? 'true' : 'false');
 
-  // Auto-session
   autoSession = document.getElementById('chkAutoSession').checked;
   LS.set('auto_session', autoSession ? 'true' : 'false');
   updateAutoBadge();
 
-  // Apply to current mode
   timeLeft = totalTime = MODES[currentMode].duration;
   renderTimer();
   buildFluidMeter(100);
-  running = false; clearRaf(); stopTicking();
+  running = false; clearRaf(); stopTicking(); tickingActive = false;
   closeSettings();
   showToast(isNepali ? 'समय सेट भयो ✓' : 'Settings saved ✓');
 }
@@ -1560,30 +1872,44 @@ function parseShareParams() {
   const time = parseInt(params.get('time') || '', 10);
   if (mode && allowedModes.includes(mode)) {
     currentMode = mode;
-    totalTime   = MODES[mode].duration;
-    if (!isNaN(time) && time >= 1 && time <= 7200) {
-      timeLeft = time;
-    } else {
-      timeLeft = MODES[mode].duration;
-    }
+    totalTime = MODES[mode].duration;
+    timeLeft = (!isNaN(time) && time >= 1 && time <= 7200) ? time : MODES[mode].duration;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   PWA INSTALL PROMPT
+   ═══════════════════════════════════════════════════════════════════ */
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  // Show install banner after 5 seconds if not dismissed before
+  if (LS.get('install_dismissed') !== 'true') {
+    setTimeout(() => document.getElementById('installBanner').classList.add('show'), 5000);
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').classList.remove('show');
+  deferredInstallPrompt = null;
+  showToast(isNepali ? 'एप स्थापना भयो ✓' : 'App installed ✓');
+});
 
 /* ═══════════════════════════════════════════════════════════════════
    LANGUAGE TOGGLE
    ═══════════════════════════════════════════════════════════════════ */
 function applyLanguage() {
   document.documentElement.lang = isNepali ? 'ne' : 'en';
-
   document.getElementById('langToggle').textContent = isNepali ? 'English' : 'नेपाली';
 
-  document.getElementById('siteTitle').innerHTML =
-    isNepali
-      ? 'टिक्-टिक् <span class="accent">Pomodoro</span>'
-      : 'Tik-Tik <span class="accent">Pomodoro</span>';
+  document.getElementById('siteTitle').innerHTML = isNepali
+    ? 'टिक्-टिक् <span class="accent">Pomodoro</span>'
+    : 'Tik-Tik <span class="accent">Pomodoro</span>';
 
-  const tabsNe = ['कामको समय', 'छोटो विश्राम', 'लामो विश्राम'];
-  const tabsEn = ['Work', 'Short Break', 'Long Break'];
+  const tabsNe = ['कामको समय','छोटो विश्राम','लामो विश्राम'];
+  const tabsEn = ['Work','Short Break','Long Break'];
   document.querySelectorAll('.mode-tab').forEach((t, i) => {
     t.textContent = isNepali ? tabsNe[i] : tabsEn[i];
   });
@@ -1592,43 +1918,38 @@ function applyLanguage() {
   document.getElementById('resetBtn').textContent    = isNepali ? '↺ रिसेट'  : '↺ Reset';
   document.getElementById('settingsBtn').textContent = isNepali ? '⚙ सेट'    : '⚙ Settings';
 
-  // Settings labels
   document.querySelector('#settingsModal .settings-title').textContent =
     isNepali ? '⏲ समायोजन गर्नुहोस् (मिनेट)' : '⏲ Adjust Durations (minutes)';
-  document.querySelectorAll('.setting-label')[0].textContent = isNepali ? '🍅 कामको समय'     : '🍅 Work';
-  document.querySelectorAll('.setting-label')[1].textContent = isNepali ? '🌿 छोटो विश्राम'  : '🌿 Short Break';
-  document.querySelectorAll('.setting-label')[2].textContent = isNepali ? '🧘 लामो विश्राम'  : '🧘 Long Break';
+  document.querySelectorAll('.setting-label')[0].textContent = isNepali ? '🍅 कामको समय'    : '🍅 Work';
+  document.querySelectorAll('.setting-label')[1].textContent = isNepali ? '🌿 छोटो विश्राम' : '🌿 Short Break';
+  document.querySelectorAll('.setting-label')[2].textContent = isNepali ? '🧘 लामो विश्राम' : '🧘 Long Break';
 
-  // Settings section headings
   document.getElementById('soundSectionTitle').textContent = isNepali ? '🔊 आवाज सेटिङ'  : '🔊 Sound Settings';
   document.getElementById('autoSectionTitle').textContent  = isNepali ? '🔄 स्वत: सत्र'  : '🔄 Auto-Session';
-
-  // Sound labels
-  document.getElementById('soundStartLabel').textContent = isNepali ? 'सुरु भएको बेला आवाज'   : 'Sound on start';
-  document.getElementById('soundStartSub').textContent   = isNepali ? 'टाइमर सुरु हुँदा बजाउनुस्' : 'Play when timer starts';
-  document.getElementById('soundEndLabel').textContent   = isNepali ? 'सकिएको बेला आवाज'     : 'Sound on end';
-  document.getElementById('soundEndSub').textContent     = isNepali ? 'टाइमर सकिँदा बजाउनुस्'    : 'Play when timer ends';
-  document.getElementById('soundTickLabel').textContent  = isNepali ? 'अन्तिम ७ सेकेन्ड ढक-ढक' : 'Last 7s ticking';
-  document.getElementById('soundTickSub').textContent    = isNepali ? 'अन्तिम ७ सेकेन्डमा घडीको आवाज' : 'Ticking clock for final 7 seconds';
-
-  // Auto session label
+  document.getElementById('soundStartLabel').textContent   = isNepali ? 'सुरु भएको बेला आवाज'   : 'Sound on start';
+  document.getElementById('soundStartSub').textContent     = isNepali ? 'टाइमर सुरु हुँदा बजाउनुस्' : 'Play when timer starts';
+  document.getElementById('soundEndLabel').textContent     = isNepali ? 'सकिएको बेला आवाज'     : 'Sound on end';
+  document.getElementById('soundEndSub').textContent       = isNepali ? 'टाइमर सकिँदा बजाउनुस्'    : 'Play when timer ends';
+  document.getElementById('soundTickLabel').textContent    = isNepali ? 'अन्तिम ७ सेकेन्ड ढक-ढक' : 'Last 7s ticking';
+  document.getElementById('soundTickSub').textContent      = isNepali ? 'अन्तिम ७ सेकेन्डमा घडीको आवाज' : 'Ticking clock for final 7 seconds';
   document.getElementById('autoLabel').textContent = isNepali ? 'स्वत: अर्को सत्र सुरु गर्नुस्' : 'Auto-start next session';
   document.getElementById('autoSub').textContent   = isNepali ? 'कामको सत्र सकिएपछि स्वत: विश्राम सुरु हुन्छ' : 'Breaks start automatically after work sessions';
-
   document.getElementById('cancelSettingsBtn').textContent = isNepali ? 'रद्द'     : 'Cancel';
   document.getElementById('saveSettingsBtn').textContent   = isNepali ? 'सुरक्षित' : 'Save';
 
-  // Footer
-  document.getElementById('footerText').textContent =
-    isNepali
-      ? '© २०८२ विवेक राई · सर्वाधिकार सुरक्षित   | Created with ❤️ by Bibek Rai'
-      : '© 2026 Bibek Rai . All rights reserved.   | Created with ❤️ by Bibek Rai';
+  document.getElementById('footerText').textContent = isNepali
+    ? '© २०८२ विवेक राई · सर्वाधिकार सुरक्षित | Created with ❤️ by Bibek Rai'
+    : '© 2026 Bibek Rai. All rights reserved. | Created with ❤️ by Bibek Rai';
 
-  // Keyboard hint
   const hint = document.querySelector('.kbd-hint');
   hint.innerHTML = isNepali
-    ? '<kbd>Space</kbd> सुरु/रोक · <kbd>R</kbd> रिसेट · <kbd>L</kbd> भाषा · <kbd>H</kbd> इतिहास'
-    : '<kbd>Space</kbd> start/pause · <kbd>R</kbd> reset · <kbd>L</kbd> language · <kbd>H</kbd> history';
+    ? '<kbd>Space</kbd> सुरु/रोक · <kbd>R</kbd> रिसेट · <kbd>L</kbd> भाषा · <kbd>H</kbd> इतिहास · <kbd>F</kbd> फुलस्क्रिन'
+    : '<kbd>Space</kbd> start/pause · <kbd>R</kbd> reset · <kbd>L</kbd> language · <kbd>H</kbd> history · <kbd>F</kbd> fullscreen';
+
+  // Install banner
+  document.getElementById('installTitle').textContent = isNepali ? 'एप डाउनलोड गर्नुहोस्' : 'Install App';
+  document.getElementById('installSub').textContent   = isNepali ? 'होमस्क्रिनमा थप्नुहोस् — इन्टरनेट बिना काम गर्छ' : 'Add to home screen — works offline';
+  document.getElementById('installYes').textContent   = isNepali ? 'थप्नुस्' : 'Install';
 
   updateAutoBadge();
   renderModeLabel();
@@ -1636,7 +1957,6 @@ function applyLanguage() {
   renderTimer();
   updateNepaliDate();
   updateClock();
-
   LS.set('prana_lang', isNepali ? 'ne' : 'en');
 }
 
@@ -1649,21 +1969,12 @@ function init() {
   const cs = LS.get('custom_short'); if (cs)  MODES.shortBreak.duration = parseInt(cs,  10) * 60;
   const cl = LS.get('custom_long');  if (cl)  MODES.longBreak.duration  = parseInt(cl,  10) * 60;
 
-  // Restore sound settings (default: all ON = checked)
-  // These are defaults — true unless explicitly set to 'false'
-  // (handled by getSoundSetting() reading localStorage with default=true)
+  autoSession = LS.get('auto_session') !== 'false';
 
-  // Restore auto-session
-  autoSession = LS.get('auto_session') !== 'false'; // default: true (on)
-
-  // Restore language preference
   const savedLang = LS.get('prana_lang');
   isNepali = (savedLang !== 'en');
 
-  // Parse share URL params (safe, sanitized)
   parseShareParams();
-
-  // Ensure today's date is set (resets midnight)
   getLapsToday();
 
   applyLanguage();
@@ -1671,16 +1982,20 @@ function init() {
   renderPips();
   renderTimer();
 
-  // Clock tick every 30s
   updateNepaliDate();
   updateClock();
   setInterval(() => { updateNepaliDate(); updateClock(); }, 30000);
 
-  // ── Event bindings ────────────────────────────────────────────
-  document.getElementById('startPauseBtn').addEventListener('click', () => running ? pauseTimer() : startTimer());
+  // ── Event bindings ──────────────────────────────────────────────
+  document.getElementById('startPauseBtn').addEventListener('click', () => {
+    unlockAudio(); // ensure audio on tap
+    running ? pauseTimer() : startTimer();
+  });
   document.getElementById('resetBtn').addEventListener('click', resetTimer);
   document.getElementById('settingsBtn').addEventListener('click', openSettings);
   document.getElementById('langToggle').addEventListener('click', () => { isNepali = !isNepali; applyLanguage(); });
+  document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+  document.getElementById('fsExitBtn').addEventListener('click', exitFullscreen);
 
   document.querySelectorAll('.mode-tab').forEach(tab =>
     tab.addEventListener('click', () => switchMode(tab.dataset.mode))
@@ -1699,25 +2014,37 @@ function init() {
   });
 
   document.getElementById('reportCloseBtn').addEventListener('click', hideReportPanel);
-
   document.getElementById('reportCopyBtn').addEventListener('click', () => {
-    const textToCopy = lastNepaliReport; // always Nepali
-    navigator.clipboard.writeText(textToCopy)
+    const text = lastNepaliReport;
+    navigator.clipboard.writeText(text)
       .then(() => showToast(isNepali ? 'प्रतिलिपि गरियो ✓' : 'Copied ✓'))
       .catch(() => {
-        // Fallback for older browsers
         try {
           const ta = document.createElement('textarea');
-          ta.value = textToCopy;
+          ta.value = text;
           ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
           document.body.appendChild(ta); ta.select();
           document.execCommand('copy');
           document.body.removeChild(ta);
           showToast(isNepali ? 'प्रतिलिपि गरियो ✓' : 'Copied ✓');
-        } catch {
-          showToast(isNepali ? 'प्रतिलिपि असफल' : 'Copy failed');
-        }
+        } catch { showToast(isNepali ? 'प्रतिलिपि असफल' : 'Copy failed'); }
       });
+  });
+
+  // PWA install banner
+  document.getElementById('installYes').addEventListener('click', () => {
+    document.getElementById('installBanner').classList.remove('show');
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      deferredInstallPrompt.userChoice.then(choice => {
+        if (choice.outcome === 'accepted') showToast(isNepali ? 'एप स्थापना भयो ✓' : 'App installed ✓');
+        deferredInstallPrompt = null;
+      }).catch(() => {});
+    }
+  });
+  document.getElementById('installNo').addEventListener('click', () => {
+    document.getElementById('installBanner').classList.remove('show');
+    LS.set('install_dismissed', 'true');
   });
 
   // Keyboard shortcuts
@@ -1725,16 +2052,19 @@ function init() {
     const tag = document.activeElement.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     switch (e.code) {
-      case 'Space': e.preventDefault(); running ? pauseTimer() : startTimer(); break;
-      case 'KeyR':  resetTimer();  break;
+      case 'Space': e.preventDefault(); unlockAudio(); running ? pauseTimer() : startTimer(); break;
+      case 'KeyR':  resetTimer(); break;
       case 'KeyL':  isNepali = !isNepali; applyLanguage(); break;
       case 'KeyH':  openHistory(); break;
-      case 'Escape':
-        closeHistory();
-        closeSettings();
-        hideReportPanel();
-        break;
+      case 'KeyF':  toggleFullscreen(); break;
+      case 'Escape': closeHistory(); closeSettings(); hideReportPanel(); if (fsMode) exitFullscreen(); break;
     }
+  });
+
+  // Fullscreen overlay: tap anywhere to start/pause
+  document.getElementById('fullscreenOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('fsExitBtn') || document.getElementById('fsExitBtn').contains(e.target)) return;
+    unlockAudio(); running ? pauseTimer() : startTimer();
   });
 }
 
