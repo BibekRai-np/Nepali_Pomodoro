@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="ne" dir="ltr">
+<head>
+  <!-- Developed by Bibek Rai -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="टिक्-टिक् Pomodoro – द्विभाषिक पोमोडोरो टाइमर। Bilingual Pomodoro timer with Nepali date and NPT clock." />
+  <title>२५:०० | टिक्-टिक् Nepali Pomodoro</title>
+
+  <!--
+    Font Strategy (Organic Vitality theme):
+    • Nepali headings/UI  → Mukta (clean geometric Devanagari sans)
+    • English countdown   → Bodoni Moda (high-contrast Didone serif, weight 900) ← replaces Foldit
+    • Nepali countdown    → Vesper Libre (high-contrast Devanagari serif)
+    All loaded from Google Fonts.
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Mukta:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;900&family=Vesper+Libre:wght@400;700;900&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── Reset & Base ──────────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      /* Brand palette — Organic Vitality */
+      --mint:        #76C8A1;
+      --mint-dark:   #5aaa85;
+      --mint-light:  #d4f0e3;
+      --mint-faint:  #f0faf5;
+      --amber:       #F6C244;
+      --amber-dark:  #d4a020;
+      --amber-light: #fff4d0;
+      --bg:          #FFFFFF;
+      --surface:     #F8F9FA;
+      --text-main:   #0D1117;
+      --text-muted:  #6B7280;
+      --text-light:  #9CA3AF;
+      --border:      #E5E7EB;
+
+      --shadow-xs:  0 1px 3px rgba(0,0,0,0.07);
+      --shadow-sm:  0 2px 8px rgba(0,0,0,0.08);
+      --shadow-md:  0 8px 32px rgba(0,0,0,0.10);
+      --shadow-lg:  0 16px 56px rgba(0,0,0,0.13);
+
+      --r-xs:  6px;
+      --r-sm:  10px;
+      --r-md:  16px;
+      --r-lg:  24px;
+      --r-xl:  32px;
+      --r-full: 999px;
+
+      --font-ne:    'Mukta', 'Noto Sans Devanagari', sans-serif;
+      --font-en:    'Outfit', sans-serif;
+      --font-timer-ne: 'Vesper Libre', 'Noto Sans Devanagari', serif;
+      --font-timer-en: 'Pinyon Script', serif; /* ← Pinyon Script for English countdown (BoldPrice-style) */
+
+      --timer-size: clamp(3.8rem, 16vw, 11rem);
+      --btn-h: 48px;
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-en);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; top: -200px; right: -200px;
+      width: 560px; height: 560px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(118,200,161,0.14) 0%, transparent 68%);
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed; bottom: -160px; left: -160px;
+      width: 440px; height: 440px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(246,194,68,0.12) 0%, transparent 68%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ─── Language-aware font switching ───────────────────────────── */
+    html[lang="ne"] .ui-text        { font-family: var(--font-ne); }
+    html[lang="en"] .ui-text        { font-family: var(--font-en); }
+    html[lang="ne"] #timerDisplay   { font-family: var(--font-timer-ne); }
+    html[lang="en"] #timerDisplay   { font-family: var(--font-timer-en); }
+
+    /* ─── Header ───────────────────────────────────────────────────── */
+    header {
+      position: relative; z-index: 10;
+      width: 100%; max-width: 680px;
+      padding: 20px 24px 0;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 12px;
+    }
+
+    .site-title {
+      font-size: clamp(1.1rem, 3.5vw, 1.45rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      user-select: none;
+      line-height: 1.1;
+    }
+    html[lang="ne"] .site-title { font-family: var(--font-ne); }
+    html[lang="en"] .site-title { font-family: var(--font-en); }
+    .site-title .accent { color: var(--mint-dark); }
+
+    .lang-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: var(--r-full);
+      padding: 7px 14px;
+      font-family: var(--font-en); font-size: 0.78rem; font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer; min-height: 36px;
+      transition: all 0.18s ease;
+    }
+    .lang-btn:hover { border-color: var(--mint); color: var(--mint-dark); background: var(--mint-faint); }
+
+    /* ─── DateTime strip ───────────────────────────────────────────── */
+    .datetime-strip {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-full);
+      overflow: hidden;
+      font-size: 0.8rem; font-weight: 500;
+      width: auto;
+    }
+    .dt-segment {
+      display: flex; align-items: center; gap: 5px;
+      padding: 7px 16px;
+    }
+    .dt-segment + .dt-segment { border-left: 1px solid var(--border); }
+    .dt-icon { font-size: 0.85rem; opacity: 0.7; }
+    .dt-label { color: var(--text-muted); font-weight: 500; white-space: nowrap; }
+    .dt-value { font-weight: 700; color: var(--text-main); white-space: nowrap; letter-spacing: 0.01em; }
+    html[lang="ne"] .dt-label,
+    html[lang="ne"] .dt-value { font-family: var(--font-ne); }
+
+    /* ─── Main ─────────────────────────────────────────────────────── */
+    main {
+      position: relative; z-index: 10;
+      width: 100%; max-width: 680px;
+      padding: 20px 24px 40px;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 20px; flex: 1;
+    }
+
+    /* ─── Mode Tabs ────────────────────────────────────────────────── */
+    .mode-tabs {
+      display: flex; gap: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-full);
+      padding: 4px;
+      width: 100%; max-width: 420px;
+    }
+    .mode-tab {
+      flex: 1; border: none; background: transparent;
+      border-radius: var(--r-full);
+      padding: 9px 6px;
+      font-size: clamp(0.68rem, 2vw, 0.8rem); font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer; min-height: var(--btn-h);
+      transition: all 0.18s ease; white-space: nowrap;
+    }
+    html[lang="ne"] .mode-tab { font-family: var(--font-ne); }
+    html[lang="en"] .mode-tab { font-family: var(--font-en); }
+    .mode-tab[aria-selected="true"] {
+      background: var(--bg);
+      color: var(--text-main); font-weight: 700;
+      box-shadow: var(--shadow-xs);
+    }
+
+    /* ─── Session pips ─────────────────────────────────────────────── */
+    .lap-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.78rem; font-weight: 600; color: var(--text-muted);
+    }
+    html[lang="ne"] .lap-row { font-family: var(--font-ne); }
+    html[lang="en"] .lap-row { font-family: var(--font-en); }
+    .pips { display: flex; gap: 7px; align-items: center; }
+    .pip {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--border); transition: background 0.3s, transform 0.2s;
+    }
+    .pip.done { background: var(--mint); transform: scale(1.2); }
+
+    /* ─── Timer area ───────────────────────────────────────────────── */
+    .timer-container {
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; min-height: 300px;
+    }
+    #fluidMeterContainer canvas {
+      display: block; border-radius: 50%;
+      box-shadow: var(--shadow-md);
+    }
+    .timer-inner {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 4px; pointer-events: none;
+    }
+    #timerDisplay {
+      font-size: var(--timer-size);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      color: var(--text-main);
+      text-shadow: 0 2px 16px rgba(255,255,255,0.8);
+      letter-spacing: -0.02em;
+    }
+    .mode-label-badge {
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(6px);
+      border-radius: var(--r-full);
+      padding: 3px 12px;
+      font-size: clamp(0.65rem, 1.8vw, 0.82rem);
+      font-weight: 700; color: var(--text-muted);
+    }
+    html[lang="ne"] .mode-label-badge { font-family: var(--font-ne); }
+    html[lang="en"] .mode-label-badge { font-family: var(--font-en); }
+
+    /* ─── Controls ─────────────────────────────────────────────────── */
+    .controls {
+      display: flex; gap: 10px;
+      flex-wrap: wrap; justify-content: center;
+      width: 100%; max-width: 480px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      border: none; border-radius: var(--r-full);
+      min-height: var(--btn-h); padding: 0 28px;
+      font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; transition: transform 0.1s, box-shadow 0.15s, background 0.15s;
+    }
+    html[lang="ne"] .btn { font-family: var(--font-ne); }
+    html[lang="en"] .btn { font-family: var(--font-en); }
+    .btn:active { transform: scale(0.95); }
+    .btn-primary { background: var(--mint); color: #fff; box-shadow: 0 4px 20px rgba(118,200,161,0.45); }
+    .btn-primary:hover { background: var(--mint-dark); box-shadow: 0 4px 24px rgba(118,200,161,0.55); }
+    .btn-ghost { background: var(--surface); color: var(--text-muted); border: 1.5px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--mint); color: var(--mint-dark); background: var(--mint-faint); }
+    .btn-amber { background: var(--amber); color: #000; box-shadow: 0 4px 16px rgba(246,194,68,0.35); }
+    .btn-amber:hover { background: var(--amber-dark); }
+
+    /* ─── Keyboard hint ────────────────────────────────────────────── */
+    .kbd-hint {
+      font-size: 0.7rem; color: var(--text-light); text-align: center;
+      font-family: var(--font-en);
+    }
+    kbd {
+      display: inline-block;
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 1px 5px; font-family: monospace;
+      background: var(--surface); font-size: 0.68rem;
+    }
+
+    /* ─── Footer ────────────────────────────────────────────────────── */
+    footer {
+      position: relative; z-index: 10;
+      width: 100%; max-width: 680px;
+      padding: 16px 24px;
+      text-align: center;
+      font-size: 0.72rem; color: var(--text-light);
+      border-top: 1px solid var(--border);
+    }
+    html[lang="ne"] footer { font-family: var(--font-ne); }
+    html[lang="en"] footer { font-family: var(--font-en); }
+
+    /* ─── Report slide-in panel ────────────────────────────────────── */
+    #reportPanel {
+      position: fixed;
+      bottom: -240px; left: 50%;
+      transform: translateX(-50%);
+      z-index: 200;
+      width: min(90vw, 460px);
+      background: var(--bg);
+      border: 1.5px solid var(--mint);
+      border-radius: var(--r-xl);
+      padding: 22px 22px 16px;
+      box-shadow: var(--shadow-lg);
+      transition: bottom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    #reportPanel.visible { bottom: 28px; }
+    .report-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .report-emoji { font-size: 1.6rem; }
+    .report-close-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-muted); font-size: 1rem; padding: 2px 6px;
+      border-radius: var(--r-xs);
+    }
+    .report-close-btn:hover { color: var(--text-main); background: var(--surface); }
+    .report-body { margin-bottom: 14px; }
+    #reportText {
+      font-size: clamp(0.88rem, 2.2vw, 1rem);
+      font-weight: 600; line-height: 1.55;
+      color: var(--text-main);
+    }
+    html[lang="ne"] #reportText { font-family: var(--font-ne); }
+    html[lang="en"] #reportText { font-family: var(--font-en); }
+    .report-actions { display: flex; gap: 8px; align-items: center; }
+    .report-copy-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--mint-faint); border: 1.5px solid var(--mint);
+      border-radius: var(--r-full); padding: 7px 16px;
+      font-size: 0.8rem; font-weight: 700;
+      color: var(--mint-dark); cursor: pointer;
+      transition: all 0.15s;
+    }
+    .report-copy-btn:hover { background: var(--mint); color: #fff; }
+    html[lang="ne"] .report-copy-btn { font-family: var(--font-ne); }
+    html[lang="en"] .report-copy-btn { font-family: var(--font-en); }
+    .report-progress-bar {
+      height: 3px; background: var(--border);
+      border-radius: 2px; overflow: hidden; margin-top: 14px;
+    }
+    .report-progress-inner {
+      height: 100%; width: 100%;
+      background: var(--mint); transform-origin: left;
+      animation: shrinkBar 8s linear forwards;
+    }
+    @keyframes shrinkBar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+    /* ─── Toast ─────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed; top: 20px; left: 50%;
+      transform: translateX(-50%) translateY(-80px);
+      background: #1f2937; color: #fff;
+      border-radius: var(--r-full); padding: 8px 20px;
+      font-size: 0.82rem; font-weight: 600;
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      z-index: 500; pointer-events: none;
+      white-space: nowrap;
+    }
+    html[lang="ne"] #toast { font-family: var(--font-ne); }
+    html[lang="en"] #toast { font-family: var(--font-en); }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ─── Overlay backdrop ──────────────────────────────────────────── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); backdrop-filter: blur(6px);
+      z-index: 400; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+
+    /* ─── Settings modal ────────────────────────────────────────────── */
+    .settings-card {
+      background: var(--bg); border-radius: var(--r-xl);
+      width: min(90vw, 400px); padding: 28px 28px 24px;
+      box-shadow: var(--shadow-lg);
+      animation: popIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
+      max-height: 90vh; overflow-y: auto;
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.92) translateY(12px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .settings-title {
+      font-size: 1rem; font-weight: 700; margin-bottom: 20px; color: var(--text-main);
+    }
+    html[lang="ne"] .settings-title { font-family: var(--font-ne); }
+    html[lang="en"] .settings-title { font-family: var(--font-en); }
+    .setting-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+    }
+    .setting-label {
+      font-size: 0.88rem; font-weight: 500; color: var(--text-muted);
+    }
+    html[lang="ne"] .setting-label { font-family: var(--font-ne); }
+    html[lang="en"] .setting-label { font-family: var(--font-en); }
+    .setting-row input[type="number"] {
+      width: 90px; padding: 8px 12px;
+      border-radius: var(--r-full); border: 1.5px solid var(--border);
+      text-align: center; font-size: 0.9rem; font-weight: 600;
+      font-family: var(--font-en);
+      transition: border-color 0.15s;
+    }
+    .setting-row input[type="number"]:focus { outline: none; border-color: var(--mint); }
+
+    /* ─── Settings section divider ─────────────────────────────────── */
+    .settings-section-title {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--text-light);
+      margin: 20px 0 12px;
+    }
+    html[lang="ne"] .settings-section-title { font-family: var(--font-ne); letter-spacing: 0; text-transform: none; font-size: 0.78rem; }
+    html[lang="en"] .settings-section-title { font-family: var(--font-en); }
+
+    /* ─── Settings checkbox rows ────────────────────────────────────── */
+    .setting-check-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .setting-check-row:last-of-type { border-bottom: none; }
+    .setting-check-label {
+      font-size: 0.88rem; font-weight: 500; color: var(--text-main);
+      line-height: 1.3;
+    }
+    .setting-check-sub {
+      font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;
+    }
+    html[lang="ne"] .setting-check-label,
+    html[lang="ne"] .setting-check-sub { font-family: var(--font-ne); }
+    html[lang="en"] .setting-check-label,
+    html[lang="en"] .setting-check-sub { font-family: var(--font-en); }
+
+    /* Toggle switch */
+    .toggle-switch {
+      position: relative; width: 44px; height: 24px;
+      flex-shrink: 0; margin-left: 12px;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; cursor: pointer;
+      inset: 0; background: var(--border);
+      border-radius: var(--r-full);
+      transition: background 0.25s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute; width: 18px; height: 18px;
+      left: 3px; top: 3px;
+      background: #fff; border-radius: 50%;
+      transition: transform 0.25s;
+      box-shadow: var(--shadow-xs);
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--mint); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+    .settings-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+    .btn-sm {
+      padding: 8px 18px; border-radius: var(--r-full); border: none;
+      font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-sm-ghost { background: var(--surface); color: var(--text-muted); }
+    .btn-sm-ghost:hover { color: var(--text-main); }
+    .btn-sm-primary { background: var(--mint); color: #fff; }
+    .btn-sm-primary:hover { background: var(--mint-dark); }
+    html[lang="ne"] .btn-sm { font-family: var(--font-ne); }
+    html[lang="en"] .btn-sm { font-family: var(--font-en); }
+
+    /* ─── History modal ─────────────────────────────────────────────── */
+    #historyOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(6px); z-index: 450; align-items: center; justify-content: center; padding: 20px; }
+    #historyOverlay.open { display: flex; }
+    #historyModal {
+      background: var(--bg); border-radius: var(--r-xl);
+      width: min(92vw, 500px); max-height: 88vh;
+      overflow: hidden; display: flex; flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      animation: popIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .history-header {
+      padding: 22px 24px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .history-title { font-size: 1.05rem; font-weight: 700; color: var(--text-main); }
+    html[lang="ne"] .history-title { font-family: var(--font-ne); }
+    html[lang="en"] .history-title { font-family: var(--font-en); }
+    .history-close {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--surface); border: none; cursor: pointer;
+      font-size: 1rem; color: var(--text-muted);
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .history-close:hover { background: var(--border); color: var(--text-main); }
+    .history-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+    .history-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+    .summary-card {
+      background: var(--surface); border-radius: var(--r-md);
+      padding: 14px 16px; border: 1px solid var(--border);
+    }
+    .summary-card-label {
+      font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 4px;
+    }
+    html[lang="ne"] .summary-card-label { font-family: var(--font-ne); letter-spacing: 0; text-transform: none; }
+    html[lang="en"] .summary-card-label { font-family: var(--font-en); }
+    .summary-card-value { font-size: 1.5rem; font-weight: 800; color: var(--text-main); line-height: 1.1; }
+    html[lang="ne"] .summary-card-value { font-family: var(--font-ne); }
+    html[lang="en"] .summary-card-value { font-family: var(--font-en); }
+    .summary-card-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+    html[lang="ne"] .summary-card-sub { font-family: var(--font-ne); }
+    html[lang="en"] .summary-card-sub { font-family: var(--font-en); }
+    .summary-card.accent-mint { border-color: var(--mint); background: var(--mint-faint); }
+    .summary-card.accent-mint .summary-card-value { color: var(--mint-dark); }
+    .summary-card.accent-amber { border-color: var(--amber); background: var(--amber-light); }
+    .summary-card.accent-amber .summary-card-value { color: var(--amber-dark); }
+    .history-log-title {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    html[lang="ne"] .history-log-title { font-family: var(--font-ne); letter-spacing: 0; text-transform: none; font-size: 0.8rem; }
+    html[lang="en"] .history-log-title { font-family: var(--font-en); }
+    .session-log { display: flex; flex-direction: column; gap: 7px; }
+    .session-entry {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 14px;
+      background: var(--surface); border-radius: var(--r-sm);
+      border: 1px solid var(--border);
+      transition: border-color 0.15s;
+    }
+    .session-entry:hover { border-color: var(--mint); }
+    .session-entry-left { display: flex; align-items: center; gap: 10px; }
+    .session-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--mint); flex-shrink: 0; }
+    .session-label { font-size: 0.84rem; font-weight: 600; color: var(--text-main); }
+    html[lang="ne"] .session-label { font-family: var(--font-ne); }
+    html[lang="en"] .session-label { font-family: var(--font-en); }
+    .session-time { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-en); font-weight: 500; }
+    .session-duration {
+      font-size: 0.78rem; font-weight: 600; color: var(--mint-dark);
+      background: var(--mint-faint); border-radius: var(--r-full);
+      padding: 3px 10px; font-family: var(--font-en);
+    }
+    .history-empty { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 0.9rem; }
+    html[lang="ne"] .history-empty { font-family: var(--font-ne); }
+    html[lang="en"] .history-empty { font-family: var(--font-en); }
+    .history-empty .empty-icon { font-size: 2.5rem; display: block; margin-bottom: 10px; opacity: 0.4; }
+
+    /* ─── Auto indicator badge ──────────────────────────────────────── */
+    #autoBadge {
+      display: none;
+      align-items: center; gap: 5px;
+      background: var(--mint-faint); border: 1px solid var(--mint);
+      border-radius: var(--r-full); padding: 4px 12px;
+      font-size: 0.72rem; font-weight: 700; color: var(--mint-dark);
+    }
+    #autoBadge.visible { display: flex; }
+    html[lang="ne"] #autoBadge { font-family: var(--font-ne); }
+    html[lang="en"] #autoBadge { font-family: var(--font-en); }
+    .auto-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--mint);
+      animation: pulseDot 1.4s ease-in-out infinite;
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    /* ─── History FAB ───────────────────────────────────────────────── */
+    #historyBtn {
+      position: fixed; bottom: 24px; right: 24px;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--amber); border: none;
+      font-size: 1.25rem; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(246,194,68,0.5);
+      z-index: 150; transition: transform 0.15s, box-shadow 0.15s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #historyBtn:hover { transform: scale(1.08); box-shadow: 0 6px 22px rgba(246,194,68,0.6); }
+    #historyBtn:active { transform: scale(0.95); }
+
+    /* ─── Responsive ────────────────────────────────────────────────── */
+    @media (max-width: 480px) {
+      header, main { padding-inline: 16px; }
+      .datetime-strip { font-size: 0.72rem; }
+      .dt-segment { padding: 6px 12px; }
+      .controls { gap: 8px; }
+      .btn { padding: 0 18px; }
+      .history-summary { grid-template-columns: 1fr 1fr; gap: 8px; }
+    }
+    @media (max-width: 340px) {
+      .datetime-strip { flex-direction: column; border-radius: var(--r-lg); }
+      .dt-segment + .dt-segment { border-left: none; border-top: 1px solid var(--border); }
+      .history-summary { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1 class="site-title" id="siteTitle">टिक्-टिक् <span class="accent">Pomodoro</span></h1>
+  <button id="langToggle" class="lang-btn" aria-label="Switch language">English</button>
+</header>
+
+<main>
+  <!-- Date & time strip -->
+  <div class="datetime-strip" role="status" aria-live="polite">
+    <div class="dt-segment">
+      <span class="dt-icon">📅</span>
+      <span class="dt-label ui-text" id="dateLabel">वि.सं.</span>
+      <span class="dt-value" id="nepaliDateValue">…</span>
+    </div>
+    <div class="dt-segment">
+      <span class="dt-icon">🕐</span>
+      <span class="dt-label ui-text" id="timeLabel">समय</span>
+      <span class="dt-value" id="nptTimeValue">…</span>
+    </div>
+  </div>
+
+  <!-- Mode selector -->
+  <div class="mode-tabs" role="tablist" aria-label="Timer mode">
+    <button class="mode-tab" role="tab" aria-selected="true"  data-mode="work">कामको समय</button>
+    <button class="mode-tab" role="tab" aria-selected="false" data-mode="shortBreak">छोटो विश्राम</button>
+    <button class="mode-tab" role="tab" aria-selected="false" data-mode="longBreak">लामो विश्राम</button>
+  </div>
+
+  <!-- Session pips -->
+  <div class="lap-row" role="status" aria-live="polite">
+    <div class="pips">
+      <span class="pip" id="pip0"></span>
+      <span class="pip" id="pip1"></span>
+      <span class="pip" id="pip2"></span>
+      <span class="pip" id="pip3"></span>
+    </div>
+    <span id="lapText" class="ui-text">सत्र: ०/४</span>
+  </div>
+
+  <!-- Auto-session indicator -->
+  <div id="autoBadge" aria-live="polite">
+    <span class="auto-dot"></span>
+    <span id="autoBadgeText" class="ui-text">स्वत: सत्र</span>
+  </div>
+
+  <!-- Fluid meter + countdown -->
+  <div class="timer-container" aria-label="Countdown timer">
+    <div id="fluidMeterContainer"></div>
+    <div class="timer-inner">
+      <div id="timerDisplay" role="timer" aria-live="off">२५:००</div>
+      <div class="mode-label-badge ui-text" id="modeLabelDisp">काम</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn btn-primary ui-text" id="startPauseBtn">▶ सुरु</button>
+    <button class="btn btn-ghost ui-text"   id="resetBtn">↺ रिसेट</button>
+    <button class="btn btn-amber ui-text"   id="settingsBtn">⚙ सेट</button>
+  </div>
+  <p class="kbd-hint"><kbd>Space</kbd> सुरु/रोक · <kbd>R</kbd> रिसेट · <kbd>L</kbd> भाषा · <kbd>H</kbd> इतिहास</p>
+</main>
+
+<footer>
+  <p id="footerText" class="ui-text">© २०८२ विवेक राई · सर्वाधिकार सुरक्षित   | Created with ❤️ by Bibek Rai</p>
+</footer>
+
+<!-- Settings modal -->
+<div id="settingsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+  <div class="settings-card">
+    <p class="settings-title ui-text" id="settingsModalTitle">⏲ समायोजन गर्नुहोस् (मिनेट)</p>
+
+    <!-- Duration rows -->
+    <div class="setting-row">
+      <label class="setting-label ui-text" for="setWorkMins">🍅 कामको समय</label>
+      <input type="number" id="setWorkMins" value="25" min="1" max="180" aria-label="Work minutes" />
+    </div>
+    <div class="setting-row">
+      <label class="setting-label ui-text" for="setShortMins">🌿 छोटो विश्राम</label>
+      <input type="number" id="setShortMins" value="5" min="1" max="60" aria-label="Short break minutes" />
+    </div>
+    <div class="setting-row">
+      <label class="setting-label ui-text" for="setLongMins">🧘 लामो विश्राम</label>
+      <input type="number" id="setLongMins" value="15" min="1" max="90" aria-label="Long break minutes" />
+    </div>
+
+    <!-- Sound settings section -->
+    <p class="settings-section-title ui-text" id="soundSectionTitle">🔊 आवाज सेटिङ</p>
+
+    <div class="setting-check-row">
+      <div>
+        <div class="setting-check-label ui-text" id="soundStartLabel">सुरु भएको बेला आवाज</div>
+        <div class="setting-check-sub ui-text" id="soundStartSub">टाइमर सुरु हुँदा बजाउनुस्</div>
+      </div>
+      <label class="toggle-switch" aria-label="Sound on start">
+        <input type="checkbox" id="chkSoundStart" checked />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-check-row">
+      <div>
+        <div class="setting-check-label ui-text" id="soundEndLabel">सकिएको बेला आवाज</div>
+        <div class="setting-check-sub ui-text" id="soundEndSub">टाइमर सकिँदा बजाउनुस्</div>
+      </div>
+      <label class="toggle-switch" aria-label="Sound on end">
+        <input type="checkbox" id="chkSoundEnd" checked />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-check-row">
+      <div>
+        <div class="setting-check-label ui-text" id="soundTickLabel">अन्तिम ७ सेकेन्ड ढक-ढक</div>
+        <div class="setting-check-sub ui-text" id="soundTickSub">अन्तिम ७ सेकेन्डमा घडीको आवाज</div>
+      </div>
+      <label class="toggle-switch" aria-label="Ticking sound last 7 seconds">
+        <input type="checkbox" id="chkSoundTick" checked />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <!-- Auto-session section -->
+    <p class="settings-section-title ui-text" id="autoSectionTitle">🔄 स्वत: सत्र</p>
+
+    <div class="setting-check-row">
+      <div>
+        <div class="setting-check-label ui-text" id="autoLabel">स्वत: अर्को सत्र सुरु गर्नुस्</div>
+        <div class="setting-check-sub ui-text" id="autoSub">कामको सत्र सकिएपछि स्वत: विश्राम सुरु हुन्छ</div>
+      </div>
+      <label class="toggle-switch" aria-label="Auto start next session">
+        <input type="checkbox" id="chkAutoSession" checked />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="settings-actions">
+      <button class="btn-sm btn-sm-ghost ui-text" id="cancelSettingsBtn">रद्द</button>
+      <button class="btn-sm btn-sm-primary ui-text" id="saveSettingsBtn">सुरक्षित</button>
+    </div>
+  </div>
+</div>
+
+<!-- Report slide-in panel -->
+<div id="reportPanel" role="status" aria-live="polite">
+  <div class="report-header">
+    <span class="report-emoji">🎉</span>
+    <button class="report-close-btn" id="reportCloseBtn" aria-label="Close report">✕</button>
+  </div>
+  <div class="report-body">
+    <p id="reportText" class="ui-text"></p>
+  </div>
+  <div class="report-actions">
+    <button class="report-copy-btn ui-text" id="reportCopyBtn">📋 <span id="copyBtnLabel">प्रतिलिपि</span></button>
+  </div>
+  <div class="report-progress-bar">
+    <div class="report-progress-inner" id="reportProgressInner"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" role="alert" aria-live="assertive"></div>
+
+<!-- History overlay -->
+<div id="historyOverlay" role="dialog" aria-modal="true" aria-labelledby="historyTitleEl">
+  <div id="historyModal">
+    <div class="history-header">
+      <span class="history-title ui-text" id="historyTitleEl">आजको फोकस इतिहास</span>
+      <button class="history-close" id="historyModalClose" aria-label="Close history">✕</button>
+    </div>
+    <div class="history-body" id="historyContent">
+      <!-- populated by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- History FAB -->
+<button id="historyBtn" aria-label="View today's history">📊</button>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   BIKRAM SAMBAT CONVERTER
+   ═══════════════════════════════════════════════════════════════════ */
+const BS_DATA = {
+  2000:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2001:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2002:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2003:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2004:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2005:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2006:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2007:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2008:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2009:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2010:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2011:[31,31,31,32,31,31,29,30,30,29,29,31],
+  2012:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2013:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2014:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2015:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2016:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2017:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2018:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2019:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2020:[31,32,31,32,31,30,30,30,29,29,30,30],
+  2021:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2022:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2023:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2024:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2025:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2026:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2027:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2028:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2029:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2030:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2031:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2032:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2033:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2034:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2035:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2036:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2037:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2038:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2039:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2040:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2041:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2042:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2043:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2044:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2045:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2046:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2047:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2048:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2049:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2050:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2051:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2052:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2053:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2054:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2055:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2056:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2057:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2058:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2059:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2060:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2061:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2062:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2063:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2064:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2065:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2066:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2067:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2068:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2069:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2070:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2071:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2072:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2073:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2074:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2075:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2076:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2077:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2078:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2079:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2080:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2081:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2082:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2083:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2084:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2085:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2086:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2087:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2088:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2089:[31,31,32,32,31,30,30,29,30,29,30,30],
+  2090:[31,32,31,32,31,30,30,30,29,29,30,31],
+};
+
+const BS_START_AD = new Date(1943, 3, 14); // Baisakh 1, 2000 BS = April 14, 1943 AD
+
+function adToBS(adDate) {
+  let totalDays = Math.floor((adDate - BS_START_AD) / 86400000);
+  let bsYear = 2000;
+  while (true) {
+    const months = BS_DATA[bsYear] || BS_DATA[2090];
+    const daysInYear = months.reduce((a,b)=>a+b,0);
+    if (totalDays < daysInYear) break;
+    totalDays -= daysInYear;
+    bsYear++;
+  }
+  const months = BS_DATA[bsYear] || BS_DATA[2090];
+  let bsMonth = 1;
+  for (let m = 0; m < 12; m++) {
+    if (totalDays < months[m]) { bsMonth = m + 1; break; }
+    totalDays -= months[m];
+  }
+  return { bsYear, bsMonth, bsDay: totalDays + 1, dayOfWeek: adDate.getDay() };
+}
+
+const NE_MONTHS = ['बैशाख','जेठ','असार','श्रावण','भाद्र','आश्विन','कार्तिक','मंसिर','पौष','माघ','फाल्गुन','चैत्र'];
+const EN_MONTHS = ['Baisakh','Jestha','Asadh','Shrawan','Bhadra','Ashwin','Kartik','Mangsir','Poush','Magh','Falgun','Chaitra'];
+const NE_DAYS   = ['आइतवार','सोमवार','मंगलवार','बुधवार','बिहिवार','शुक्रवार','शनिवार'];
+const EN_DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+/* ═══════════════════════════════════════════════════════════════════
+   NUMERAL HELPERS
+   ═══════════════════════════════════════════════════════════════════ */
+const NE_DIGITS = ['०','१','२','३','४','५','६','७','८','९'];
+function toNE(n) {
+  return String(n).replace(/[0-9]/g, d => NE_DIGITS[+d]);
+}
+function padNE(n) { return toNE(String(n).padStart(2,'0')); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LOCAL STORAGE WRAPPER (try/catch guard)
+   ═══════════════════════════════════════════════════════════════════ */
+const LS = {
+  get(k)    { try { return localStorage.getItem(k); }    catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); }        catch {} },
+  remove(k) { try { localStorage.removeItem(k); }        catch {} },
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   SOUND SYSTEM
+   ─── Audio elements reference files in src/ folder
+   ═══════════════════════════════════════════════════════════════════ */
+const AUDIO = {
+  start:   new Audio('src/Start.mp3'),
+  end:     new Audio('src/end.mp3'),
+  ticking: new Audio('src/ticking.mp3'),
+};
+// Prepare ticking to loop
+AUDIO.ticking.loop = true;
+
+let tickingActive = false;
+
+function playSound(type) {
+  // Guard: check settings
+  if (type === 'start'   && !getSoundSetting('chkSoundStart')) return;
+  if (type === 'end'     && !getSoundSetting('chkSoundEnd'))   return;
+  if (type === 'ticking' && !getSoundSetting('chkSoundTick'))  return;
+
+  const audio = AUDIO[type];
+  if (!audio) return;
+  try {
+    audio.currentTime = 0;
+    audio.play().catch(() => {}); // Silently handle autoplay restrictions
+  } catch {}
+}
+
+function stopTicking() {
+  try {
+    AUDIO.ticking.pause();
+    AUDIO.ticking.currentTime = 0;
+  } catch {}
+  tickingActive = false;
+}
+
+function getSoundSetting(id) {
+  // Read live from checkbox if available, else from localStorage
+  const el = document.getElementById(id);
+  if (el) return el.checked;
+  return LS.get(id) !== 'false'; // default true
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SETTINGS STATE
+   ═══════════════════════════════════════════════════════════════════ */
+const MODES = {
+  work:       { duration: 25 * 60, labelNe: 'काम',           labelEn: 'Work'        },
+  shortBreak: { duration:  5 * 60, labelNe: 'छोटो विश्राम',  labelEn: 'Short Break' },
+  longBreak:  { duration: 15 * 60, labelNe: 'लामो विश्राम',  labelEn: 'Long Break'  },
+};
+
+let currentMode      = 'work';
+let timeLeft         = MODES.work.duration;
+let totalTime        = MODES.work.duration;
+let running          = false;
+let sessionInCycle   = 0;
+let isNepali         = true;
+let rafId            = null;
+let lastTimestamp    = null;
+let fluidMeterInst   = null;
+let reportAutoTimer  = null;
+let autoSession      = true; // auto-start next session
+
+/* ═══════════════════════════════════════════════════════════════════
+   NPT CLOCK  (Nepal Standard Time = UTC+5:45)
+   ═══════════════════════════════════════════════════════════════════ */
+function getNPTDate() {
+  const now = new Date();
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utcMs + (5 * 3600 + 45 * 60) * 1000);
+}
+
+function updateClock() {
+  const npt = getNPTDate();
+  const h24 = npt.getHours();
+  const min = npt.getMinutes();
+  const isAM   = h24 < 12;
+  const h12    = h24 % 12 || 12;
+  const minStr = String(min).padStart(2, '0');
+  const periodNe = isAM ? 'पूर्वाह्न' : 'अपराह्न';
+  const periodEn = isAM ? 'AM' : 'PM';
+  const timeStr = isNepali
+    ? `${periodNe} ${padNE(h12)}:${toNE(minStr)}`
+    : `${h12}:${minStr} ${periodEn}`;
+  document.getElementById('nptTimeValue').textContent = timeStr;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   NEPALI DATE (BS)
+   ═══════════════════════════════════════════════════════════════════ */
+function updateNepaliDate() {
+  const npt = getNPTDate();
+  const { bsYear, bsMonth, bsDay, dayOfWeek } = adToBS(npt);
+  let dateStr;
+  if (isNepali) {
+    dateStr = `${toNE(bsYear)} ${NE_MONTHS[bsMonth - 1]} ${toNE(bsDay)}, ${NE_DAYS[dayOfWeek]}`;
+  } else {
+    dateStr = `${bsYear} ${EN_MONTHS[bsMonth - 1]} ${bsDay}, ${EN_DAYS[dayOfWeek]}`;
+  }
+  document.getElementById('nepaliDateValue').textContent = dateStr;
+  document.getElementById('dateLabel').textContent = isNepali ? 'वि.सं.' : 'BS';
+  document.getElementById('timeLabel').textContent = isNepali ? 'समय'    : 'NPT';
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FLUID METER  (embedded)
+   ═══════════════════════════════════════════════════════════════════ */
+(function () {
+  function FluidMeter() {
+    var context, targetContainer, time = null, dt = null,
+      options = {
+        drawShadow: true, drawText: true, drawPercentageSign: true,
+        drawBubbles: true, fontSize: "70px", fontFamily: "Arial",
+        fontFillStyle: "white", size: 300, borderWidth: 25,
+        backgroundColor: "#e2e2e2", foregroundColor: "#fafafa"
+      },
+      currentFillPercentage = 0, fillPercentage = 0,
+      foregroundFluidLayer = { fillStyle: "purple", angle: 0, horizontalPosition: 0, angularSpeed: 0, maxAmplitude: 9, frequency: 30, horizontalSpeed: -150, initialHeight: 0 },
+      backgroundFluidLayer = { fillStyle: "pink",   angle: 0, horizontalPosition: 0, angularSpeed: 140, maxAmplitude: 12, frequency: 40, horizontalSpeed: 150, initialHeight: 0 },
+      bubblesLayer = {
+        bubbles: [], amount: 12, speed: 20, current: 0, swing: 0, size: 2,
+        reset(bubble) {
+          var mB = (options.size - (options.size - getMR()) / 2) - options.borderWidth,
+            fA = currentFillPercentage * (getMR() - options.borderWidth * 2) / 100;
+          bubble.r = random(this.size, this.size * 2) / 2;
+          bubble.x = random(0, options.size); bubble.y = random(mB, mB - fA);
+          bubble.velX = 0; bubble.velY = random(this.speed, this.speed * 2); bubble.swing = random(0, 2 * Math.PI);
+        },
+        init() {
+          for (var i = 0; i < this.amount; i++) {
+            var mB = (options.size - (options.size - getMR()) / 2) - options.borderWidth,
+              fA = currentFillPercentage * (getMR() - options.borderWidth * 2) / 100;
+            this.bubbles.push({ x: random(0, options.size), y: random(mB, mB - fA), r: random(this.size, this.size * 2) / 2, velX: 0, velY: random(this.speed, this.speed * 2) });
+          }
+        }
+      };
+    function setupCanvas() {
+      var c = document.createElement('canvas'); c.width = options.size; c.height = options.size;
+      context = c.getContext("2d"); targetContainer.appendChild(c);
+    }
+    function draw() {
+      var now = new Date().getTime(); dt = (now - (time || now)) / 1e3; time = now;
+      requestAnimationFrame(draw);
+      context.clearRect(0, 0, options.size, options.size);
+      drawBg(); drawFluid(dt); drawFg();
+    }
+    function drawBg() {
+      context.save(); context.fillStyle = options.backgroundColor;
+      context.beginPath(); context.arc(options.size / 2, options.size / 2, getMR() / 2 - options.borderWidth, 0, 2 * Math.PI);
+      context.closePath(); context.fill(); context.restore();
+    }
+    function drawFg() {
+      context.save(); context.lineWidth = options.borderWidth; context.strokeStyle = options.foregroundColor;
+      context.beginPath(); context.arc(options.size / 2, options.size / 2, getMR() / 2 - options.borderWidth / 2, 0, 2 * Math.PI);
+      context.closePath(); context.stroke(); context.restore();
+    }
+    function drawFluid(dt) {
+      context.save();
+      context.arc(options.size / 2, options.size / 2, getMR() / 2 - options.borderWidth, 0, Math.PI * 2); context.clip();
+      drawLayer(backgroundFluidLayer, dt); drawLayer(foregroundFluidLayer, dt);
+      if (options.drawBubbles) { drawMask(foregroundFluidLayer); drawBubbles(dt); }
+      context.restore();
+    }
+    function drawLayer(layer, dt) {
+      if (layer.angularSpeed > 0) { layer.angle += layer.angularSpeed * dt; layer.angle = layer.angle < 0 ? layer.angle + 360 : layer.angle; }
+      layer.horizontalPosition += layer.horizontalSpeed * dt;
+      var amp = layer.maxAmplitude * Math.sin(layer.angle * Math.PI / 180),
+        mB = (options.size - (options.size - getMR()) / 2) - options.borderWidth,
+        fA = currentFillPercentage * (getMR() - options.borderWidth * 2) / 100;
+      currentFillPercentage < fillPercentage ? currentFillPercentage += 15 * dt : currentFillPercentage > fillPercentage && (currentFillPercentage -= 15 * dt);
+      layer.initialHeight = mB - fA;
+      context.save(); context.beginPath(); context.lineTo(0, layer.initialHeight);
+      for (var x = 0; x < options.size; x++) { context.lineTo(x, layer.initialHeight + amp * Math.sin((x + layer.horizontalPosition) / layer.frequency)); }
+      context.lineTo(options.size, options.size); context.lineTo(0, options.size); context.closePath();
+      context.fillStyle = layer.fillStyle; context.fill(); context.restore();
+    }
+    function drawMask(layer) {
+      var amp = layer.maxAmplitude * Math.sin(layer.angle * Math.PI / 180);
+      context.beginPath(); context.lineTo(0, layer.initialHeight);
+      for (var x = 0; x < options.size; x++) { context.lineTo(x, layer.initialHeight + amp * Math.sin((x + layer.horizontalPosition) / layer.frequency)); }
+      context.lineTo(options.size, options.size); context.lineTo(0, options.size); context.closePath(); context.clip();
+    }
+    function drawBubbles(dt) {
+      context.save();
+      for (var i = 0; i < bubblesLayer.bubbles.length; i++) {
+        var b = bubblesLayer.bubbles[i]; context.beginPath(); context.strokeStyle = "white";
+        context.arc(b.x, b.y, b.r, 2 * Math.PI, false); context.stroke(); context.closePath();
+        b.velX = Math.abs(b.velX) < Math.abs(bubblesLayer.current) ? b.velX + bubblesLayer.current * dt : bubblesLayer.current;
+        b.y -= b.velY * dt; b.x += (bubblesLayer.swing ? 0.4 * Math.cos(bubblesLayer.swing += 0.03) * bubblesLayer.swing : 0) + b.velX * 0.5;
+        var mB = (options.size - (options.size - getMR()) / 2) - options.borderWidth,
+          fA = currentFillPercentage * (getMR() - options.borderWidth * 2) / 100;
+        if (b.y <= mB - fA) bubblesLayer.reset(b);
+      }
+      context.restore();
+    }
+    function getMR() { return options.size * 0.9; }
+    function random(min, max) { return min === max ? min : Math.random() * (max - min) + min; }
+    function clamp(n, lo, hi) { return Math.min(Math.max(n, lo), hi); }
+    return {
+      init(env) {
+        if (!env.targetContainer) throw new Error("FluidMeter: no container");
+        targetContainer = env.targetContainer;
+        fillPercentage = clamp(env.fillPercentage, 0, 100);
+        if (env.options) {
+          Object.assign(options, {
+            drawShadow: env.options.drawShadow !== false,
+            drawText: env.options.drawText !== false,
+            drawBubbles: env.options.drawBubbles !== false,
+            size: env.options.size || options.size,
+            borderWidth: env.options.borderWidth || options.borderWidth,
+            backgroundColor: env.options.backgroundColor || options.backgroundColor,
+            foregroundColor: env.options.foregroundColor || options.foregroundColor,
+          });
+          if (env.options.foregroundFluidLayer) Object.assign(foregroundFluidLayer, env.options.foregroundFluidLayer);
+          if (env.options.backgroundFluidLayer) Object.assign(backgroundFluidLayer, env.options.backgroundFluidLayer);
+        }
+        bubblesLayer.init(); setupCanvas(); draw();
+      },
+      setPercentage(p) { fillPercentage = clamp(p, 0, 100); }
+    };
+  }
+  window.FluidMeter = FluidMeter;
+})();
+
+/* ═══════════════════════════════════════════════════════════════════
+   FLUID METER HELPERS
+   ═══════════════════════════════════════════════════════════════════ */
+function buildFluidMeter(percent) {
+  const container = document.getElementById('fluidMeterContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  const fm = new FluidMeter();
+  const isWork  = currentMode === 'work';
+  const mainClr = isWork ? '#76C8A1' : '#F6C244';
+  const bgClr   = isWork ? '#b8e0cc' : '#FFD966';
+  fm.init({
+    targetContainer: container,
+    fillPercentage: Math.max(0, Math.min(100, percent)),
+    options: {
+      drawShadow: false, drawText: false, drawBubbles: true,
+      size: 280, borderWidth: 14,
+      backgroundColor: '#F8F9FA', foregroundColor: '#E5E7EB',
+      foregroundFluidLayer: { fillStyle: mainClr, angularSpeed: 70, maxAmplitude: 11, frequency: 38, horizontalSpeed: -120 },
+      backgroundFluidLayer: { fillStyle: bgClr,   angularSpeed: 90, maxAmplitude: 8,  frequency: 32, horizontalSpeed: 130  },
+    }
+  });
+  fluidMeterInst = fm;
+}
+function updateFluidPercent() {
+  if (fluidMeterInst && totalTime > 0) {
+    fluidMeterInst.setPercentage((timeLeft / totalTime) * 100);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LAP / SESSION TRACKING  (localStorage, resets at midnight)
+   ═══════════════════════════════════════════════════════════════════ */
+function todayKey() {
+  const npt = getNPTDate();
+  return `${npt.getFullYear()}-${String(npt.getMonth()+1).padStart(2,'0')}-${String(npt.getDate()).padStart(2,'0')}`;
+}
+
+function getLapsToday() {
+  const storedDate = LS.get('prana_laps_date');
+  const today      = todayKey();
+  if (storedDate !== today) {
+    LS.set('prana_laps_date', today);
+    LS.set('prana_laps_today', '0');
+    LS.remove('prana_session_log');
+    return 0;
+  }
+  return parseInt(LS.get('prana_laps_today') || '0', 10);
+}
+
+function incrementLap() {
+  const today = todayKey();
+  LS.set('prana_laps_date', today);
+  const laps = getLapsToday() + 1;
+  LS.set('prana_laps_today', String(laps));
+  const npt = getNPTDate();
+  const h24 = npt.getHours(); const min = npt.getMinutes();
+  const isAM = h24 < 12; const h12 = h24 % 12 || 12;
+  const timeLabel = `${h12}:${String(min).padStart(2,'0')} ${isAM ? 'AM' : 'PM'}`;
+  const durationMins = Math.round(MODES.work.duration / 60);
+  let log = [];
+  try { log = JSON.parse(LS.get('prana_session_log') || '[]'); } catch {}
+  log.push({ lap: laps, time: timeLabel, duration: durationMins });
+  LS.set('prana_session_log', JSON.stringify(log));
+  return laps;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DOCUMENT TITLE UPDATER  (bigtimer.net-inspired)
+   ═══════════════════════════════════════════════════════════════════ */
+function updateDocTitle() {
+  const timeStr = fmtTimeLatin(timeLeft); // always Latin for title readability
+  document.title = `${timeStr} | टिक्-टिक् Nepali Pomodoro`;
+}
+
+function fmtTimeLatin(secs) {
+  const m = String(Math.floor(secs / 60)).padStart(2, '0');
+  const s = String(secs % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TIMER CORE
+   ═══════════════════════════════════════════════════════════════════ */
+function fmtTime(secs) {
+  const m = String(Math.floor(secs / 60)).padStart(2, '0');
+  const s = String(secs % 60).padStart(2, '0');
+  const str = `${m}:${s}`;
+  return isNepali ? toNE(str) : str;
+}
+
+function renderTimer() {
+  document.getElementById('timerDisplay').textContent = fmtTime(timeLeft);
+  updateFluidPercent();
+  updateDocTitle();
+}
+
+function renderPips() {
+  [0,1,2,3].forEach(i => {
+    document.getElementById(`pip${i}`).classList.toggle('done', i < sessionInCycle);
+  });
+  document.getElementById('lapText').textContent =
+    isNepali
+      ? `सत्र: ${toNE(sessionInCycle)}/${toNE(4)}`
+      : `Session: ${sessionInCycle}/4`;
+}
+
+function renderModeLabel() {
+  const lbl = isNepali ? MODES[currentMode].labelNe : MODES[currentMode].labelEn;
+  document.getElementById('modeLabelDisp').textContent = lbl;
+}
+
+function clearRaf() {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+}
+
+function setStartPauseBtnText() {
+  document.getElementById('startPauseBtn').textContent =
+    running
+      ? (isNepali ? '⏸ रोक्नुस्' : '⏸ Pause')
+      : (isNepali ? '▶ सुरु'      : '▶ Start');
+}
+
+function pauseTimer() {
+  if (!running) return;
+  running = false;
+  clearRaf();
+  stopTicking();
+  setStartPauseBtnText();
+}
+
+function startTimer() {
+  if (running) return;
+  running = true;
+  lastTimestamp = null;
+  setStartPauseBtnText();
+  playSound('start'); // Play start sound
+
+  function tick(ts) {
+    if (!running) return;
+    if (lastTimestamp === null) lastTimestamp = ts;
+    const elapsed = ts - lastTimestamp;
+    if (elapsed >= 1000) {
+      const secs = Math.floor(elapsed / 1000);
+      lastTimestamp = ts - (elapsed % 1000);
+      timeLeft = Math.max(0, timeLeft - secs);
+      renderTimer();
+
+      // Handle ticking sound for last 7 seconds
+      if (timeLeft <= 7 && timeLeft > 0) {
+        if (!tickingActive && getSoundSetting('chkSoundTick')) {
+          tickingActive = true;
+          playSound('ticking');
+        }
+      } else if (timeLeft > 7 && tickingActive) {
+        stopTicking();
+      }
+
+      if (timeLeft === 0) {
+        running = false; rafId = null;
+        stopTicking();
+        onTimerComplete();
+        return;
+      }
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+  rafId = requestAnimationFrame(tick);
+}
+
+function resetTimer() {
+  clearRaf();
+  running = false;
+  stopTicking();
+  timeLeft = MODES[currentMode].duration;
+  totalTime = MODES[currentMode].duration;
+  setStartPauseBtnText();
+  renderTimer();
+}
+
+function switchMode(mode) {
+  clearRaf();
+  running = false;
+  stopTicking();
+  currentMode = mode;
+  timeLeft = MODES[mode].duration;
+  totalTime = MODES[mode].duration;
+  document.querySelectorAll('.mode-tab').forEach(tab =>
+    tab.setAttribute('aria-selected', tab.dataset.mode === mode ? 'true' : 'false')
+  );
+  renderModeLabel();
+  renderTimer();
+  buildFluidMeter(100);
+  setStartPauseBtnText();
+}
+
+function onTimerComplete() {
+  setStartPauseBtnText();
+  playSound('end'); // Play end sound
+
+  if (currentMode === 'work') {
+    const laps = incrementLap();
+    sessionInCycle++;
+    showReportPanel(laps);
+    if (sessionInCycle >= 4) {
+      sessionInCycle = 0;
+      renderPips();
+      switchMode('longBreak');
+    } else {
+      renderPips();
+      switchMode('shortBreak');
+    }
+  } else {
+    switchMode('work');
+  }
+
+  // Auto-session: if enabled, start next session after a short delay
+  if (autoSession) {
+    setTimeout(() => {
+      if (!running) startTimer();
+    }, 1500);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   AUTO-SESSION BADGE
+   ═══════════════════════════════════════════════════════════════════ */
+function updateAutoBadge() {
+  const badge = document.getElementById('autoBadge');
+  if (autoSession) {
+    badge.classList.add('visible');
+  } else {
+    badge.classList.remove('visible');
+  }
+  document.getElementById('autoBadgeText').textContent =
+    isNepali ? 'स्वत: सत्र सक्रिय' : 'Auto-session active';
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   REPORT PANEL
+   ═══════════════════════════════════════════════════════════════════ */
+let lastNepaliReport = '';
+
+function showReportPanel(laps) {
+  const neStr = `तपाईंले आज ${toNE(laps)} ल्याप्स (कामको सत्र) पूरा गर्नुभयो।`;
+  const enStr = `You have completed ${laps} laps (work sessions) today.`;
+  lastNepaliReport = neStr;
+
+  document.getElementById('reportText').textContent = isNepali ? neStr : enStr;
+  document.getElementById('copyBtnLabel').textContent = isNepali ? 'प्रतिलिपि' : 'Copy';
+
+  const bar = document.getElementById('reportProgressInner');
+  bar.style.animation = 'none';
+  void bar.offsetWidth; // reflow
+  bar.style.animation = '';
+
+  const panel = document.getElementById('reportPanel');
+  panel.classList.add('visible');
+
+  if (reportAutoTimer) clearTimeout(reportAutoTimer);
+  reportAutoTimer = setTimeout(() => hideReportPanel(), 8000);
+}
+
+function hideReportPanel() {
+  document.getElementById('reportPanel').classList.remove('visible');
+  if (reportAutoTimer) { clearTimeout(reportAutoTimer); reportAutoTimer = null; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TOAST
+   ═══════════════════════════════════════════════════════════════════ */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; // textContent only — no XSS risk
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   HISTORY MODAL
+   ═══════════════════════════════════════════════════════════════════ */
+function openHistory() {
+  const laps = getLapsToday();
+  const totalFocusMins = laps * Math.round(MODES.work.duration / 60);
+  let log = [];
+  try { log = JSON.parse(LS.get('prana_session_log') || '[]'); } catch {}
+  if (log.length > laps) log = log.slice(-laps);
+  const isNe = isNepali;
+  const content = document.getElementById('historyContent');
+  document.getElementById('historyTitleEl').textContent =
+    isNe ? 'आजको फोकस इतिहास' : "Today's Focus History";
+
+  if (laps === 0) {
+    content.innerHTML = `
+      <div class="history-empty">
+        <span class="empty-icon">🍅</span>
+        ${isNe ? 'आज कुनै कामको सत्र पूरा भएन।' : 'No work sessions completed today.'}
+      </div>`;
+  } else {
+    const lapsDisplay = isNe ? toNE(laps) : laps;
+    const minsDisplay = isNe ? `${toNE(totalFocusMins)} मिनेट` : `${totalFocusMins} min`;
+
+    let summaryHTML = `
+      <div class="history-summary">
+        <div class="summary-card accent-mint">
+          <div class="summary-card-label">${isNe ? 'पूरा सत्रहरू' : 'Sessions Done'}</div>
+          <div class="summary-card-value">${lapsDisplay}</div>
+          <div class="summary-card-sub">${isNe ? 'कामको ल्याप्स' : 'work laps'}</div>
+        </div>
+        <div class="summary-card accent-amber">
+          <div class="summary-card-label">${isNe ? 'कुल फोकस समय' : 'Total Focus'}</div>
+          <div class="summary-card-value">${minsDisplay}</div>
+          <div class="summary-card-sub">${isNe ? 'आजको कुल' : "today's total"}</div>
+        </div>
+      </div>`;
+
+    let logHTML = `<div class="history-log-title">${isNe ? 'सत्र विवरण' : 'Session Log'}</div>
+      <div class="session-log">`;
+
+    if (log.length > 0) {
+      const reversed = [...log].reverse();
+      reversed.forEach((entry) => {
+        const lapLabel = isNe ? `${toNE(entry.lap)} नम्बर सत्र` : `Session #${entry.lap}`;
+        const durLabel = isNe ? `${toNE(entry.duration)} मिनेट` : `${entry.duration} min`;
+        logHTML += `
+          <div class="session-entry">
+            <div class="session-entry-left">
+              <span class="session-dot"></span>
+              <span class="session-label">${lapLabel}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="session-time">${entry.time}</span>
+              <span class="session-duration">${durLabel}</span>
+            </div>
+          </div>`;
+      });
+    } else {
+      for (let i = laps; i >= 1; i--) {
+        const lapLabel = isNe ? `${toNE(i)} नम्बर सत्र` : `Session #${i}`;
+        const durMins  = Math.round(MODES.work.duration / 60);
+        const durLabel = isNe ? `${toNE(durMins)} मिनेट` : `${durMins} min`;
+        logHTML += `
+          <div class="session-entry">
+            <div class="session-entry-left">
+              <span class="session-dot"></span>
+              <span class="session-label">${lapLabel}</span>
+            </div>
+            <span class="session-duration">${durLabel}</span>
+          </div>`;
+      }
+    }
+    logHTML += `</div>`;
+    content.innerHTML = summaryHTML + logHTML;
+  }
+  document.getElementById('historyOverlay').classList.add('open');
+}
+
+function closeHistory() {
+  document.getElementById('historyOverlay').classList.remove('open');
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SETTINGS
+   ═══════════════════════════════════════════════════════════════════ */
+function openSettings() {
+  document.getElementById('setWorkMins').value  = MODES.work.duration / 60;
+  document.getElementById('setShortMins').value = MODES.shortBreak.duration / 60;
+  document.getElementById('setLongMins').value  = MODES.longBreak.duration / 60;
+  // Load saved sound & auto preferences
+  document.getElementById('chkSoundStart').checked  = LS.get('snd_start')   !== 'false';
+  document.getElementById('chkSoundEnd').checked    = LS.get('snd_end')     !== 'false';
+  document.getElementById('chkSoundTick').checked   = LS.get('snd_tick')    !== 'false';
+  document.getElementById('chkAutoSession').checked = LS.get('auto_session') !== 'false';
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function saveSettings() {
+  // Durations
+  let w = parseInt(document.getElementById('setWorkMins').value,  10);
+  let s = parseInt(document.getElementById('setShortMins').value, 10);
+  let l = parseInt(document.getElementById('setLongMins').value,  10);
+  if (isNaN(w) || w < 1) w = 25;  w = Math.min(180, w);
+  if (isNaN(s) || s < 1) s = 5;   s = Math.min(60, s);
+  if (isNaN(l) || l < 1) l = 15;  l = Math.min(90, l);
+  MODES.work.duration       = w * 60;
+  MODES.shortBreak.duration = s * 60;
+  MODES.longBreak.duration  = l * 60;
+  LS.set('custom_work', w); LS.set('custom_short', s); LS.set('custom_long', l);
+
+  // Sound settings
+  const sStart = document.getElementById('chkSoundStart').checked;
+  const sEnd   = document.getElementById('chkSoundEnd').checked;
+  const sTick  = document.getElementById('chkSoundTick').checked;
+  LS.set('snd_start', sStart ? 'true' : 'false');
+  LS.set('snd_end',   sEnd   ? 'true' : 'false');
+  LS.set('snd_tick',  sTick  ? 'true' : 'false');
+
+  // Auto-session
+  autoSession = document.getElementById('chkAutoSession').checked;
+  LS.set('auto_session', autoSession ? 'true' : 'false');
+  updateAutoBadge();
+
+  // Apply to current mode
+  timeLeft = totalTime = MODES[currentMode].duration;
+  renderTimer();
+  buildFluidMeter(100);
+  running = false; clearRaf(); stopTicking();
+  closeSettings();
+  showToast(isNepali ? 'समय सेट भयो ✓' : 'Settings saved ✓');
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SHARE URL
+   ═══════════════════════════════════════════════════════════════════ */
+function parseShareParams() {
+  const params = new URLSearchParams(window.location.search);
+  const allowedModes = ['work', 'shortBreak', 'longBreak'];
+  const mode = params.get('mode');
+  const time = parseInt(params.get('time') || '', 10);
+  if (mode && allowedModes.includes(mode)) {
+    currentMode = mode;
+    totalTime   = MODES[mode].duration;
+    if (!isNaN(time) && time >= 1 && time <= 7200) {
+      timeLeft = time;
+    } else {
+      timeLeft = MODES[mode].duration;
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LANGUAGE TOGGLE
+   ═══════════════════════════════════════════════════════════════════ */
+function applyLanguage() {
+  document.documentElement.lang = isNepali ? 'ne' : 'en';
+
+  document.getElementById('langToggle').textContent = isNepali ? 'English' : 'नेपाली';
+
+  document.getElementById('siteTitle').innerHTML =
+    isNepali
+      ? 'टिक्-टिक् <span class="accent">Pomodoro</span>'
+      : 'Tik-Tik <span class="accent">Pomodoro</span>';
+
+  const tabsNe = ['कामको समय', 'छोटो विश्राम', 'लामो विश्राम'];
+  const tabsEn = ['Work', 'Short Break', 'Long Break'];
+  document.querySelectorAll('.mode-tab').forEach((t, i) => {
+    t.textContent = isNepali ? tabsNe[i] : tabsEn[i];
+  });
+
+  setStartPauseBtnText();
+  document.getElementById('resetBtn').textContent    = isNepali ? '↺ रिसेट'  : '↺ Reset';
+  document.getElementById('settingsBtn').textContent = isNepali ? '⚙ सेट'    : '⚙ Settings';
+
+  // Settings labels
+  document.querySelector('#settingsModal .settings-title').textContent =
+    isNepali ? '⏲ समायोजन गर्नुहोस् (मिनेट)' : '⏲ Adjust Durations (minutes)';
+  document.querySelectorAll('.setting-label')[0].textContent = isNepali ? '🍅 कामको समय'     : '🍅 Work';
+  document.querySelectorAll('.setting-label')[1].textContent = isNepali ? '🌿 छोटो विश्राम'  : '🌿 Short Break';
+  document.querySelectorAll('.setting-label')[2].textContent = isNepali ? '🧘 लामो विश्राम'  : '🧘 Long Break';
+
+  // Settings section headings
+  document.getElementById('soundSectionTitle').textContent = isNepali ? '🔊 आवाज सेटिङ'  : '🔊 Sound Settings';
+  document.getElementById('autoSectionTitle').textContent  = isNepali ? '🔄 स्वत: सत्र'  : '🔄 Auto-Session';
+
+  // Sound labels
+  document.getElementById('soundStartLabel').textContent = isNepali ? 'सुरु भएको बेला आवाज'   : 'Sound on start';
+  document.getElementById('soundStartSub').textContent   = isNepali ? 'टाइमर सुरु हुँदा बजाउनुस्' : 'Play when timer starts';
+  document.getElementById('soundEndLabel').textContent   = isNepali ? 'सकिएको बेला आवाज'     : 'Sound on end';
+  document.getElementById('soundEndSub').textContent     = isNepali ? 'टाइमर सकिँदा बजाउनुस्'    : 'Play when timer ends';
+  document.getElementById('soundTickLabel').textContent  = isNepali ? 'अन्तिम ७ सेकेन्ड ढक-ढक' : 'Last 7s ticking';
+  document.getElementById('soundTickSub').textContent    = isNepali ? 'अन्तिम ७ सेकेन्डमा घडीको आवाज' : 'Ticking clock for final 7 seconds';
+
+  // Auto session label
+  document.getElementById('autoLabel').textContent = isNepali ? 'स्वत: अर्को सत्र सुरु गर्नुस्' : 'Auto-start next session';
+  document.getElementById('autoSub').textContent   = isNepali ? 'कामको सत्र सकिएपछि स्वत: विश्राम सुरु हुन्छ' : 'Breaks start automatically after work sessions';
+
+  document.getElementById('cancelSettingsBtn').textContent = isNepali ? 'रद्द'     : 'Cancel';
+  document.getElementById('saveSettingsBtn').textContent   = isNepali ? 'सुरक्षित' : 'Save';
+
+  // Footer
+  document.getElementById('footerText').textContent =
+    isNepali
+      ? '© २०८२ विवेक राई · सर्वाधिकार सुरक्षित   | Created with ❤️ by Bibek Rai'
+      : '© 2026 Bibek Rai . All rights reserved.   | Created with ❤️ by Bibek Rai';
+
+  // Keyboard hint
+  const hint = document.querySelector('.kbd-hint');
+  hint.innerHTML = isNepali
+    ? '<kbd>Space</kbd> सुरु/रोक · <kbd>R</kbd> रिसेट · <kbd>L</kbd> भाषा · <kbd>H</kbd> इतिहास'
+    : '<kbd>Space</kbd> start/pause · <kbd>R</kbd> reset · <kbd>L</kbd> language · <kbd>H</kbd> history';
+
+  updateAutoBadge();
+  renderModeLabel();
+  renderPips();
+  renderTimer();
+  updateNepaliDate();
+  updateClock();
+
+  LS.set('prana_lang', isNepali ? 'ne' : 'en');
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════════════════════ */
+function init() {
+  // Restore custom durations
+  const cw = LS.get('custom_work');  if (cw)  MODES.work.duration       = parseInt(cw,  10) * 60;
+  const cs = LS.get('custom_short'); if (cs)  MODES.shortBreak.duration = parseInt(cs,  10) * 60;
+  const cl = LS.get('custom_long');  if (cl)  MODES.longBreak.duration  = parseInt(cl,  10) * 60;
+
+  // Restore sound settings (default: all ON = checked)
+  // These are defaults — true unless explicitly set to 'false'
+  // (handled by getSoundSetting() reading localStorage with default=true)
+
+  // Restore auto-session
+  autoSession = LS.get('auto_session') !== 'false'; // default: true (on)
+
+  // Restore language preference
+  const savedLang = LS.get('prana_lang');
+  isNepali = (savedLang !== 'en');
+
+  // Parse share URL params (safe, sanitized)
+  parseShareParams();
+
+  // Ensure today's date is set (resets midnight)
+  getLapsToday();
+
+  applyLanguage();
+  buildFluidMeter(totalTime > 0 ? (timeLeft / totalTime) * 100 : 100);
+  renderPips();
+  renderTimer();
+
+  // Clock tick every 30s
+  updateNepaliDate();
+  updateClock();
+  setInterval(() => { updateNepaliDate(); updateClock(); }, 30000);
+
+  // ── Event bindings ────────────────────────────────────────────
+  document.getElementById('startPauseBtn').addEventListener('click', () => running ? pauseTimer() : startTimer());
+  document.getElementById('resetBtn').addEventListener('click', resetTimer);
+  document.getElementById('settingsBtn').addEventListener('click', openSettings);
+  document.getElementById('langToggle').addEventListener('click', () => { isNepali = !isNepali; applyLanguage(); });
+
+  document.querySelectorAll('.mode-tab').forEach(tab =>
+    tab.addEventListener('click', () => switchMode(tab.dataset.mode))
+  );
+
+  document.getElementById('cancelSettingsBtn').addEventListener('click', closeSettings);
+  document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+  document.getElementById('settingsModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('settingsModal')) closeSettings();
+  });
+
+  document.getElementById('historyBtn').addEventListener('click', openHistory);
+  document.getElementById('historyModalClose').addEventListener('click', closeHistory);
+  document.getElementById('historyOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('historyOverlay')) closeHistory();
+  });
+
+  document.getElementById('reportCloseBtn').addEventListener('click', hideReportPanel);
+
+  document.getElementById('reportCopyBtn').addEventListener('click', () => {
+    const textToCopy = lastNepaliReport; // always Nepali
+    navigator.clipboard.writeText(textToCopy)
+      .then(() => showToast(isNepali ? 'प्रतिलिपि गरियो ✓' : 'Copied ✓'))
+      .catch(() => {
+        // Fallback for older browsers
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = textToCopy;
+          ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+          document.body.appendChild(ta); ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          showToast(isNepali ? 'प्रतिलिपि गरियो ✓' : 'Copied ✓');
+        } catch {
+          showToast(isNepali ? 'प्रतिलिपि असफल' : 'Copy failed');
+        }
+      });
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    switch (e.code) {
+      case 'Space': e.preventDefault(); running ? pauseTimer() : startTimer(); break;
+      case 'KeyR':  resetTimer();  break;
+      case 'KeyL':  isNepali = !isNepali; applyLanguage(); break;
+      case 'KeyH':  openHistory(); break;
+      case 'Escape':
+        closeHistory();
+        closeSettings();
+        hideReportPanel();
+        break;
+    }
+  });
+}
+
+init();
+</script>
+</body>
+</html>
