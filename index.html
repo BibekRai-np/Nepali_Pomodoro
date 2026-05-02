@@ -1287,12 +1287,13 @@ let totalTime       = MODES.work.duration;
 let running         = false;
 let sessionInCycle  = 0;
 let isNepali        = true;
-let rafId           = null;
-let lastTimestamp   = null;
+let timerInterval   = null;   // setInterval handle (replaces RAF — works in background)
+let timerStartedAt  = null;   // wall-clock ms when interval last started/resumed
+let timeLeftAtStart = null;   // timeLeft value when interval last started/resumed
 let fluidMeterInst  = null;
 let reportAutoTimer = null;
 let autoSession     = true;
-let fsMode          = false; // fullscreen state
+let fsMode          = false;
 
 /* ═══════════════════════════════════════════════════════════════════
    NPT CLOCK  (Nepal Standard Time = UTC+5:45)
@@ -1563,8 +1564,15 @@ function renderModeLabel() {
   document.getElementById('fsModeLabel').textContent = lbl;
 }
 
-function clearRaf() {
-  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+/* ── stopInterval: clear the setInterval handle cleanly ─────── */
+function stopInterval() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+/* ── Wall-clock elapsed seconds since last start/resume ──────── */
+function computeElapsed() {
+  if (timerStartedAt === null) return 0;
+  return (performance.now() - timerStartedAt) / 1000;
 }
 
 function setStartPauseBtnText() {
@@ -1575,64 +1583,80 @@ function setStartPauseBtnText() {
 
 function pauseTimer() {
   if (!running) return;
+  // Snap timeLeft to wall-clock reality before pausing
+  const elapsed = Math.floor(computeElapsed());
+  timeLeft = Math.max(0, timeLeftAtStart - elapsed);
   running = false;
-  clearRaf();
+  stopInterval();
   stopTicking();
   tickingActive = false;
+  renderTimer();
   setStartPauseBtnText();
 }
 
 function startTimer() {
   if (running) return;
-  // Unlock audio on start press (user gesture)
   unlockAudio();
   running = true;
-  lastTimestamp = null;
+  // Record wall-clock anchor point
+  timerStartedAt  = performance.now();
+  timeLeftAtStart = timeLeft;
   setStartPauseBtnText();
   playSound('start');
 
-  function tick(ts) {
-    if (!running) return;
-    if (lastTimestamp === null) lastTimestamp = ts;
-    const elapsed = ts - lastTimestamp;
-    if (elapsed >= 1000) {
-      const secs = Math.floor(elapsed / 1000);
-      lastTimestamp = ts - (elapsed % 1000);
-      timeLeft = Math.max(0, timeLeft - secs);
-      renderTimer();
-
-      // Last-7-second ticking
-      if (timeLeft <= 7 && timeLeft > 0) {
-        if (!tickingActive && getSoundSetting('chkSoundTick')) {
-          tickingActive = true;
-          // Resume context explicitly before ticking (mobile fix)
-          const ctx = getAudioContext();
-          if (ctx && ctx.state === 'suspended') {
-            ctx.resume().then(() => { playSound('ticking'); }).catch(() => {});
-          } else {
-            playSound('ticking');
-          }
-        }
-      } else if (timeLeft > 7 && tickingActive) {
-        stopTicking(); tickingActive = false;
-      }
-
-      if (timeLeft === 0) {
-        running = false; rafId = null;
-        stopTicking(); tickingActive = false;
-        onTimerComplete();
-        return;
-      }
-    }
-    rafId = requestAnimationFrame(tick);
-  }
-  rafId = requestAnimationFrame(tick);
+  /* setInterval at 500 ms so we never miss a second boundary even
+     when the browser throttles timers in background tabs.
+     Actual counting is wall-clock based — no drift.               */
+  stopInterval();
+  timerInterval = setInterval(timerTick, 500);
 }
 
+function timerTick() {
+  if (!running) { stopInterval(); return; }
+
+  const elapsed = Math.floor(computeElapsed());
+  const newLeft = Math.max(0, timeLeftAtStart - elapsed);
+
+  // Only act when the displayed second actually changes
+  if (newLeft !== timeLeft) {
+    timeLeft = newLeft;
+    renderTimer();
+
+    // ── Last-7-second ticking ───────────────────────────────────
+    if (timeLeft <= 7 && timeLeft > 0) {
+      if (!tickingActive && getSoundSetting('chkSoundTick')) {
+        tickingActive = true;
+        const ctx = getAudioContext();
+        const doTick = () => playSound('ticking');
+        (ctx && ctx.state === 'suspended')
+          ? ctx.resume().then(doTick).catch(doTick)
+          : doTick();
+      }
+    } else if (timeLeft > 7 && tickingActive) {
+      stopTicking(); tickingActive = false;
+    }
+
+    // ── Timer complete ──────────────────────────────────────────
+    if (timeLeft === 0) {
+      running = false;
+      stopInterval();
+      stopTicking(); tickingActive = false;
+      onTimerComplete();
+    }
+  }
+}
+
+/* Page Visibility API — when tab comes back into focus after being
+   hidden, immediately recalculate and fire any missed sounds.      */
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && running) timerTick();
+});
+
 function resetTimer() {
-  clearRaf();
+  stopInterval();
   running = false;
   stopTicking(); tickingActive = false;
+  timerStartedAt = null; timeLeftAtStart = null;
   timeLeft = MODES[currentMode].duration;
   totalTime = MODES[currentMode].duration;
   setStartPauseBtnText();
@@ -1640,9 +1664,10 @@ function resetTimer() {
 }
 
 function switchMode(mode) {
-  clearRaf();
+  stopInterval();
   running = false;
   stopTicking(); tickingActive = false;
+  timerStartedAt = null; timeLeftAtStart = null;
   currentMode = mode;
   timeLeft = MODES[mode].duration;
   totalTime = MODES[mode].duration;
@@ -1857,7 +1882,7 @@ function saveSettings() {
   timeLeft = totalTime = MODES[currentMode].duration;
   renderTimer();
   buildFluidMeter(100);
-  running = false; clearRaf(); stopTicking(); tickingActive = false;
+  running = false; stopInterval(); timerStartedAt = null; timeLeftAtStart = null; stopTicking(); tickingActive = false;
   closeSettings();
   showToast(isNepali ? 'समय सेट भयो ✓' : 'Settings saved ✓');
 }
